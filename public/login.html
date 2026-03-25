@@ -2,9 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Login - Modern Auth System</title>
     <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --primary-smoky: #1e3a8a;
+            --secondary: #4f46e5;
+            --secondary-smoky: #3730a3;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text-dark: #0f172a;
+            --text-light: #475569;
+            --bg-light: #f1f5f9;
+            --bg-white: #ffffff;
+            --bg-smoky: #eef2ff;
+            --border: #cbd5e1;
+            --radius: 12px;
+            --transition: all 0.2s ease;
+            --gradient-start: #2563eb;
+            --gradient-end: #4f46e5;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,27 +34,28 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f0ff 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            color: #666; /* gray text */
+            color: var(--text-light);
         }
 
         .container {
-            background: white; /* main container white */
-            border-radius: 6px;
-            box-shadow: none; /* removed panel shadow */
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
             overflow: hidden;
             width: 100%;
-            max-width: 420px; /* normal desktop size */
+            max-width: 420px;
             animation: slideUp 0.5s ease;
             margin: 10px;
-            color: #666; /* gray text inside */
-            position: relative; /* needed for overlay positioning */
+            color: var(--text-light);
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
 
         @keyframes slideUp {
@@ -47,73 +70,100 @@
         }
 
         .header {
-            background: white; /* remove colored header panel */
-            color: #666; /* gray text */
-            padding: 20px 24px; /* more compact */
+            background: transparent;
+            color: var(--text-dark);
+            padding: 32px 28px 20px 28px;
             text-align: center;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
         }
 
         .header h1 {
             font-size: 32px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .header p {
-            opacity: 0.9;
+            color: var(--text-light);
             font-size: 14px;
         }
 
         .form-container {
-            padding: 24px;
+            padding: 28px;
             position: relative;
-            padding-top: 56px; /* reserve space for alerts */
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 24px;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .input-wrapper {
+            position: relative;
         }
 
         input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
+            padding: 14px 40px 14px 14px;
+            border: 1.5px solid var(--border);
             border-radius: 10px;
             font-size: 14px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             outline: none;
             font-family: inherit;
+            background: var(--bg-light);
+            color: var(--text-dark);
         }
 
         input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--primary);
+            background: var(--bg-white);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 18px;
+        }
+
+        .input-icon:hover {
+            color: var(--primary);
         }
 
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
-        .btn-login:hover {
+        .btn-login:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            background: linear-gradient(135deg, var(--primary-dark), var(--secondary-smoky));
         }
 
         .btn-login:active {
@@ -127,49 +177,84 @@
             box-shadow: none;
         }
 
+        .forgot-password {
+            text-align: right;
+            margin-top: 8px;
+        }
+
+        .forgot-password a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .forgot-password a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
         .register-link {
             text-align: center;
-            margin-top: 20px;
-            color: #666;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(37, 99, 235, 0.1);
+            color: var(--text-light);
             font-size: 14px;
         }
 
         .register-link a {
-            color: #667eea;
+            color: var(--primary);
             text-decoration: none;
             font-weight: 600;
+            transition: var(--transition);
         }
 
         .register-link a:hover {
+            color: var(--primary-dark);
             text-decoration: underline;
         }
 
         .alert {
             position: fixed;
-            top: 12px;
-            left: 8px;
-            right: 8px;
-            max-width: calc(100% - 16px);
-            margin: 0 auto;
-            padding: 12px;
-            border-radius: 10px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            max-width: 90%;
+            min-width: 280px;
+            padding: 14px 20px;
+            border-radius: 12px;
             display: none;
             z-index: 9999;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         }
 
         .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: block;
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-left: 4px solid var(--success);
         }
 
         .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: block;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-left: 4px solid var(--error);
         }
 
         .loader {
@@ -178,10 +263,9 @@
             display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.35);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
             z-index: 9998;
-            -webkit-backdrop-filter: blur(2px);
-            backdrop-filter: blur(2px);
         }
 
         .loader.active {
@@ -189,13 +273,12 @@
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(37, 99, 235, 0.2);
+            border-top: 3px solid var(--primary);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
         }
 
         @keyframes spin {
@@ -203,208 +286,255 @@
             100% { transform: rotate(360deg); }
         }
 
-        .forgot-password {
-            text-align: right;
-            margin-top: 5px;
-        }
-
-        .forgot-password a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 12px;
-        }
-
-        .forgot-password a:hover {
-            text-decoration: underline;
-        }
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            /* Mobile layout: keep form visible and full-width; Oppo A31 will be handled by JS */
-            .container { max-width: 100%; border-radius: 0; box-shadow: none; padding: 0; margin: 0; }
-            .form-container { display: block; padding: 16px; }
-            .container { margin-bottom: 20px; }
+            body {
+                padding: 0;
+                align-items: flex-start;
+            }
+            
+            .container {
+                max-width: 100%;
+                border-radius: 0;
+                margin: 0;
+                height: 100vh;
+                max-height: 100vh;
+                overflow-y: auto;
+            }
+            
+            .form-container {
+                padding: 24px 20px 32px 20px;
+            }
+            
+            .header {
+                padding: 40px 24px 20px 24px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .alert {
+                top: 10px;
+                width: calc(100% - 20px);
+                max-width: calc(100% - 20px);
+                font-size: 13px;
+                padding: 12px 16px;
+            }
         }
 
-        /* Android panel class (JS will add on Android devices except Oppo A31) */
-        .android-panel {
-            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-            border-radius: 12px;
-            background: white;
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 20px 16px 28px 16px;
+            }
+            
+            .header {
+                padding: 32px 20px 16px 20px;
+            }
+            
+            .header h1 {
+                font-size: 26px;
+            }
+            
+            input {
+                padding: 12px 36px 12px 12px;
+                font-size: 16px;
+            }
+            
+            .btn-login {
+                padding: 12px;
+                font-size: 15px;
+            }
         }
 
-        /* Make sure form is comfortably sized on larger screens */
-        @media (min-width: 769px) {
-            .container { max-width: 380px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.15); margin-bottom: 24px; }
-            .form-container { padding: 28px; }
+        /* Prevent zoom on input focus for mobile */
+        @media (max-width: 768px) {
+            input {
+                font-size: 16px !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="app-root" style="visibility:hidden">
-        <div class="container">
+    <div class="container">
         <div class="header">
             <h1>Welcome Back</h1>
-            <p>Login to access your account</p>
+            <p>Sign in to continue to your account</p>
         </div>
+       <br><br><br>
         <div class="form-container">
-            <div id="alert" class="alert" style="display:none"></div>
+            <div id="alert" class="alert"></div>
+            
             <form id="loginForm">
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="email" placeholder="Enter your email" required>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" placeholder="Enter your email" autocomplete="email">
+                        <span class="input-icon">📧</span>
+                    </div>
                 </div>
+                
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="password" placeholder="Enter your password" required>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+                        <span class="input-icon" id="togglePassword" style="cursor: pointer;">👁️</span>
+                    </div>
+                    <div class="forgot-password">
+                        <a href="forgot-password.html">Forgot Password?</a>
+                    </div>
                 </div>
-                <div class="forgot-password">
-                    <a href="#">Forgot Password?</a>
-                </div>
-                <button type="submit" class="btn-login">Login</button>
-                <div class="loader" id="loader" style="display:none">
-                    <div class="spinner"></div>
-                </div>
+                
+                <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
+                
                 <div class="register-link">
-                    Don't have an account? <a href="register.html">Register here</a>
+                    Don't have an account? <a href="register.html">Create Account</a>
                 </div>
             </form>
         </div>
     </div>
+    
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+    </div>
 
     <script>
-        const form = document.getElementById('loginForm');
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
         const alertDiv = document.getElementById('alert');
         const loader = document.getElementById('loader');
-        const loginBtn = document.querySelector('.btn-login');
+        const togglePassword = document.getElementById('togglePassword');
 
-        // Ensure overlays/buttons are reset on initial load to avoid brief flash on very small screens
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                if (loader) hideLoader();
-                if (alertDiv) alertDiv.className = 'alert';
-                document.body.style.overflow = '';
-                if (loginBtn) loginBtn.disabled = false;
-            } catch (e) { /* ignore */ }
+        // Toggle password visibility
+        let isPasswordVisible = false;
+        togglePassword.addEventListener('click', function() {
+            isPasswordVisible = !isPasswordVisible;
+            passwordInput.type = isPasswordVisible ? 'text' : 'password';
+            this.textContent = isPasswordVisible ? '🙈' : '👁️';
         });
 
-        form.addEventListener('submit', async (e) => {
+        // Show alert message
+        function showAlert(message, type) {
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                hideAlert();
+            }, 3000);
+        }
+
+        function hideAlert() {
+            alertDiv.className = 'alert';
+        }
+
+        // Show/hide loader
+        function showLoader() {
+            loader.classList.add('active');
+        }
+
+        function hideLoader() {
+            loader.classList.remove('active');
+        }
+
+        // Validate email
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Handle form submission
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            // Validate email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            // Validation
+            if (!email || !password) {
+                showAlert('Please enter both email and password', 'error');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
                 showAlert('Please enter a valid email address', 'error');
                 return;
             }
-
+            
             if (password.length < 6) {
                 showAlert('Password must be at least 6 characters', 'error');
                 return;
             }
-
+            
             showLoader();
-            hideAlert();
-
+            loginBtn.disabled = true;
+            
             try {
-                // disable button to avoid duplicate submissions and visual glitches
-                if (loginBtn) loginBtn.disabled = true;
-
                 const response = await fetch('http://localhost:3000/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (response.ok) {
-                    localStorage.setItem('token', data.data.token);
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    // Store token in localStorage
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
                     
-                    showAlert('Login successful! Redirecting to dashboard...', 'success');
+                    showAlert('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to dashboard or home page after 1.5 seconds
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 1500);
                 } else {
-                    showAlert(data.message || 'Invalid email or password', 'error');
+                    showAlert(data.message || 'Login failed. Please check your credentials.', 'error');
                 }
             } catch (error) {
+                console.error('Login error:', error);
                 showAlert('Network error. Please make sure the server is running.', 'error');
             } finally {
                 hideLoader();
-                document.body.style.overflow = '';
-                if (loginBtn) loginBtn.disabled = false;
+                loginBtn.disabled = false;
             }
         });
-
-        function showAlert(message, type) {
-            alertDiv.textContent = message;
-            alertDiv.className = `alert ${type}`;
-            alertDiv.style.display = 'block';
-            // hide automatically after 3s
-            setTimeout(() => { hideAlert(); }, 3000);
-        }
-
-        function hideAlert() {
-            alertDiv.className = 'alert';
-            alertDiv.style.display = 'none';
-        }
-
-        function showLoader() {
-            if (!loader) return;
-            loader.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function hideLoader() {
-            if (!loader) return;
-            loader.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        // Detect Oppo A31 (or small OPPO devices) and apply Android panel otherwise
-        (function(){
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isOppoA31 = /oppo/i.test(ua) && /a31/i.test(ua);
-            const isSmallOppo = /oppo/i.test(ua) && window.innerWidth <= 480;
-            const isAndroid = /android/i.test(ua);
-            const appRoot = document.getElementById('app-root');
-            let container = appRoot ? appRoot.querySelector('.container') : document.querySelector('.container');
-
-            if ((isOppoA31 || isSmallOppo) && container && appRoot) {
-                // Move the container node out of the app-root without destroying the script
-                document.body.insertBefore(container, appRoot);
-                // Remove the empty app-root wrapper
-                appRoot.remove();
-
-                document.body.style.padding = '8px';
-                const header = container.querySelector('.header');
-                if (header) header.style.padding = '16px';
-                const formContainer = container.querySelector('.form-container');
-                if (formContainer) formContainer.style.padding = '12px';
-
-                // ensure the container is visible (we hid app-root initially)
-                container.style.visibility = 'visible';
-            } else if (isAndroid && container) {
-                // On Android devices (except Oppo A31), show panel with shadow
-                container.classList.add('android-panel');
-                const header = container.querySelector('.header');
-                if (header) header.style.padding = '16px';
-            } else if (container) {
-                // Desktop: keep neutral appearance
-                container.style.boxShadow = 'none';
-            }
-        })();
-
-        // Reveal app after JS adjustments to avoid flashes
-        document.addEventListener('DOMContentLoaded', () => {
-            const appRoot = document.getElementById('app-root');
-            if (appRoot) appRoot.style.visibility = 'visible';
+        
+        // Add input animations and validation
+        emailInput.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
         });
+        
+        emailInput.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+        
+        passwordInput.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+        
+        passwordInput.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+        
+        // Check if user is already logged in
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            // Optional: Verify token with server
+            console.log('User already logged in');
+            // Uncomment to auto redirect
+            // window.location.href = 'dashboard.html';
+        }
     </script>
 </body>
 </html>

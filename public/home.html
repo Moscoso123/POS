@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>BluePOS | Modern Point of Sale System</title>
+    <!-- Google Fonts & Material Icons + Chart.js -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f4f9;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        /* ========= MODERN BLUE VARIABLES ========= */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --primary-smoky: #1e3a8a;
+            --secondary: #4f46e5;
+            --secondary-smoky: #3730a3;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text-dark: #0f172a;
+            --text-light: #475569;
+            --bg-light: #f1f5f9;
+            --bg-white: #ffffff;
+            --bg-smoky: #eef2ff;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 280px;
+            --topbar-height: 72px;
+        }
+
+        /* ========= LAYOUT ========= */
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR - MODERN GLASS */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+            border-right: 1px solid rgba(37, 99, 235, 0.15);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 20;
+            transition: var(--transition);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 26px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 6px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .nav-item .material-symbols-outlined {
+            font-size: 24px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-smoky);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(95deg, rgba(37, 99, 235, 0.1), rgba(79, 70, 229, 0.05));
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+        }
+
+        .sidebar-footer {
+            padding: 20px 24px 32px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        /* TOPBAR */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: #f8fafd;
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.12);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--primary);
+        }
+
+        .topbar-title {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--text-dark);
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pos-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-light);
+            padding: 6px 16px 6px 12px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        /* PAGE CONTENT STYLES */
+        .page-container {
+            padding: 28px 32px;
+        }
+
+        /* Dashboard Cards + Chart */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-top: 12px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        canvas {
+            max-height: 320px;
+            width: 100%;
+        }
+
+        .recent-sales {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        th {
+            background: #f9fafc;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .badge {
+            background: #eef2ff;
+            color: var(--primary-dark);
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* POS Counter specific styling */
+        .pos-counter-panel {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .pos-layout {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .products-grid {
+            flex: 2;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            border-right: 1px solid var(--border);
+        }
+
+        .product-tile {
+            background: var(--bg-light);
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .product-tile:hover {
+            border-color: var(--primary);
+            background: white;
+            transform: scale(0.98);
+        }
+
+        .cart-section {
+            flex: 1.2;
+            background: #fefefe;
+            padding: 24px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .total-row {
+            font-weight: 800;
+            font-size: 22px;
+            margin: 20px 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .placeholder-content {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 32px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 30;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .page-container {
+                padding: 20px;
+            }
+            .pos-layout {
+                flex-direction: column;
+            }
+            .products-grid {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="mainApp">
+        <div class="app">
+            <!-- SIDEBAR MENU (All POS Focused) -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h2><span class="material-symbols-outlined">point_of_sale</span> BluePOS</h2>
+                    <p>Smart Point of Sale</p>
+                </div>
+                <div class="nav-menu" id="navMenu">
+                    <div class="nav-item active" data-page="dashboard">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-page="profile">
+                        <span class="material-symbols-outlined">storefront</span>
+                        <span>Store Profile</span>
+                    </div>
+                    <div class="nav-item" data-page="inventory">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        <span>Inventory</span>
+                    </div>
+                    <div class="nav-item" data-page="counter">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                        <span>POS Counter</span>
+                    </div>
+                    <div class="nav-item" data-page="history">
+                        <span class="material-symbols-outlined">receipt</span>
+                        <span>Sales History</span>
+                    </div>
+                    <div class="nav-item" data-page="staff">
+                        <span class="material-symbols-outlined">badge</span>
+                        <span>Staff</span>
+                    </div>
+                    <div class="nav-item" data-page="reports">
+                        <span class="material-symbols-outlined">assessment</span>
+                        <span>Reports</span>
+                    </div>
+                    <div class="nav-item" data-page="settings">
+                        <span class="material-symbols-outlined">tune</span>
+                        <span>POS Settings</span>
+                    </div>
+                </div>
+                <div class="sidebar-footer">
+                    <div style="font-size:12px; color:#64748b;">⚡ Live POS v2.0</div>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <div class="main-content">
+                <div class="topbar">
+                    <button class="menu-toggle" id="menuToggleBtn">☰</button>
+                    <div class="topbar-title" id="currentPageTitle">POS Dashboard</div>
+                    <div class="topbar-actions">
+                        <div class="pos-badge">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">store</span>
+                            <span>Main Outlet • Open</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-container" id="pageContent">
+                    <!-- dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let currentPage = "dashboard";
+        let salesChart = null; // Chart.js instance
+        
+        // Cart state for POS Counter
+        let cart = []; // { id, name, price, quantity }
+        
+        // Sample product catalog
+        const products = [
+            { id: 1, name: "Espresso", price: 3.50, icon: "coffee" },
+            { id: 2, name: "Cappuccino", price: 4.75, icon: "local_cafe" },
+            { id: 3, name: "Latte", price: 4.50, icon: "coffee" },
+            { id: 4, name: "Croissant", price: 2.95, icon: "bakery_dining" },
+            { id: 5, name: "Muffin", price: 3.25, icon: "cake" },
+            { id: 6, name: "Sandwich", price: 6.90, icon: "lunch_dining" }
+        ];
+        
+        // Helper: update cart UI inside POS Counter
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cartItemsList');
+            const totalSpan = document.getElementById('cartTotal');
+            if (!cartContainer) return;
+            
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">Cart empty</div>';
+                if(totalSpan) totalSpan.innerText = '0.00';
+                return;
+            }
+            
+            let html = '';
+            let total = 0;
+            cart.forEach((item, idx) => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                html += `
+                    <div class="cart-item">
+                        <div><strong>${item.name}</strong> x ${item.quantity}</div>
+                        <div>$${subtotal.toFixed(2)} 
+                            <button class="remove-item" data-idx="${idx}" style="background:none; border:none; color:#ef4444; cursor:pointer; margin-left:8px;">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            cartContainer.innerHTML = html;
+            if(totalSpan) totalSpan.innerText = total.toFixed(2);
+            
+            // attach remove events
+            document.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.getAttribute('data-idx'));
+                    cart.splice(idx, 1);
+                    updateCartUI();
+                });
+            });
+        }
+        
+        function addToCart(product) {
+            const existing = cart.find(item => item.id === product.id);
+            if(existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            updateCartUI();
+        }
+        
+        function clearCart() {
+            cart = [];
+            updateCartUI();
+        }
+        
+        function checkoutPOS() {
+            if(cart.length === 0) {
+                alert("Cart is empty! Add items to checkout.");
+                return;
+            }
+            const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            alert(`✅ Checkout successful! Total: $${total.toFixed(2)}\nThank you for your purchase.`);
+            clearCart();
+            // Optionally update dashboard later
+        }
+        
+        // ---- RENDER LOGIC (all POS centric) ----
+        function renderDashboardWithChart() {
+            // dashboard html with chart container
+            const html = `
+                <div class="dashboard-grid">
+                    <div class="stat-card"><div class="card-title"><span class="material-symbols-outlined">today</span> Today's Sales</div><div class="card-value">$1,284</div><span>↑ 15% vs yesterday</span></div>
+                    <div class="stat-card"><div class="card-title"><span class="material-symbols-outlined">shopping_bag</span> Transactions</div><div class="card-value">43</div><span>Today</span></div>
+                    <div class="stat-card"><div class="card-title"><span class="material-symbols-outlined">inventory</span> Items Sold</div><div class="card-value">128</div><span>Units</span></div>
+                    <div class="stat-card"><div class="card-title"><span class="material-symbols-outlined">trending_up</span> Avg. Ticket</div><div class="card-value">$29.86</div><span>POS average</span></div>
+                </div>
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 20px; font-weight:600;">📊 Sales Performance (Last 7 Days)</h3>
+                    <canvas id="weeklySalesChart" style="max-height: 280px; width:100%"></canvas>
+                </div>
+                <div class="recent-sales">
+                    <table style="min-width: 500px;">
+                        <thead><tr><th>Invoice</th><th>Items</th><th>Amount</th><th>Cashier</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td>#POS-2401</td><td>Latte + Muffin</td><td>$9.25</td><td>Emma W.</td><td><span class="badge">Completed</span></td></tr>
+                            <tr><td>#POS-2402</td><td>Sandwich + Espresso</td><td>$10.40</td><td>James L.</td><td><span class="badge">Completed</span></td></tr>
+                            <tr><td>#POS-2403</td><td>Cappuccino x2</td><td>$9.50</td><td>Sofia R.</td><td><span class="badge">Processing</span></td></tr>
+                            <tr><td>#POS-2404</td><td>Croissant + Latte</td><td>$7.45</td><td>Emma W.</td><td><span class="badge">Completed</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+            
+            // Initialize Chart.js after DOM ready
+            const ctx = document.getElementById('weeklySalesChart')?.getContext('2d');
+            if(ctx) {
+                if(salesChart) salesChart.destroy();
+                salesChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Sales ($)',
+                            data: [820, 950, 1120, 1340, 1580, 2100, 1890],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#4f46e5',
+                            pointRadius: 5,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            }
+        }
+        
+        function renderProfile() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="placeholder-content">
+                    <span class="material-symbols-outlined" style="font-size: 56px; color: var(--primary);">storefront</span>
+                    <h2 style="margin: 16px 0;">Blue Café POS</h2>
+                    <p>📍 123 Commerce Ave, Downtown</p>
+                    <p>📞 (555) 723-4567 | ✉️ pos@bluecafe.com</p>
+                    <div style="margin-top: 28px;"><button class="btn-primary" style="width: auto; padding: 10px 28px;">Edit Store Details</button></div>
+                    <hr style="margin: 32px 0;" />
+                    <div><strong>Tax Rate:</strong> 8.25% &nbsp;|&nbsp; <strong>Receipt Footer:</strong> Thank you!</div>
+                </div>
+            `;
+        }
+        
+        function renderInventory() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="recent-sales">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border);"><h3>📦 Stock Overview</h3></div>
+                    <table>
+                        <thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td>Espresso</td><td>COF-01</td><td>$3.50</td><td>48</td><td><span class="badge">In Stock</span></td></tr>
+                            <tr><td>Cappuccino</td><td>COF-02</td><td>$4.75</td><td>32</td><td><span class="badge">In Stock</span></td></tr>
+                            <tr><td>Latte</td><td>COF-03</td><td>$4.50</td><td>27</td><td><span class="badge">Low Stock</span></td></tr>
+                            <tr><td>Croissant</td><td>PAST-01</td><td>$2.95</td><td>15</td><td><span class="badge">Reorder Soon</span></td></tr>
+                            <tr><td>Sandwich</td><td>FOOD-02</td><td>$6.90</td><td>22</td><td><span class="badge">In Stock</span></td></tr>
+                        </tbody>
+                    </table>
+                    <div style="padding: 20px;"><button class="btn-primary" style="width: auto;">➕ Add Product</button></div>
+                </div>
+            `;
+        }
+        
+        function renderCounter() {
+            // Build product tiles dynamically
+            let productsHtml = '';
+            products.forEach(prod => {
+                productsHtml += `
+                    <div class="product-tile" data-id="${prod.id}" data-name="${prod.name}" data-price="${prod.price}">
+                        <span class="material-symbols-outlined" style="font-size: 36px; color: var(--primary);">${prod.icon || 'shopping_cart'}</span>
+                        <div style="font-weight: 600; margin-top: 8px;">${prod.name}</div>
+                        <div style="color: var(--primary-dark);">$${prod.price.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            
+            const html = `
+                <div class="pos-counter-panel">
+                    <div class="pos-layout">
+                        <div class="products-grid" id="productsGrid">
+                            ${productsHtml}
+                        </div>
+                        <div class="cart-section">
+                            <h3 style="margin-bottom: 16px;">🛒 Current Sale</h3>
+                            <div id="cartItemsList" style="min-height: 200px; max-height: 300px; overflow-y: auto;">Cart empty</div>
+                            <div class="total-row">Total: $<span id="cartTotal">0.00</span></div>
+                            <button id="checkoutBtn" class="btn-primary" style="margin-bottom: 12px;">💳 Checkout</button>
+                            <button id="clearCartBtn" style="background: none; border: 1px solid var(--border); padding: 10px; width:100%; border-radius: 40px; cursor:pointer;">Clear Cart</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+            
+            // attach product click listeners
+            document.querySelectorAll('.product-tile').forEach(tile => {
+                tile.addEventListener('click', () => {
+                    const id = parseInt(tile.getAttribute('data-id'));
+                    const name = tile.getAttribute('data-name');
+                    const price = parseFloat(tile.getAttribute('data-price'));
+                    addToCart({ id, name, price });
+                });
+            });
+            document.getElementById('checkoutBtn')?.addEventListener('click', checkoutPOS);
+            document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+            updateCartUI();
+        }
+        
+        function renderHistory() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="recent-sales">
+                    <table>
+                        <thead><tr><th>Date & Time</th><th>Order #</th><th>Items</th><th>Total</th><th>Payment</th></tr></thead>
+                        <tbody>
+                            <tr><td>2025-03-25 10:32 AM</td><td>#POS-2456</td><td>Latte, Croissant</td><td>$7.45</td><td>Cash</td></tr>
+                            <tr><td>2025-03-25 09:15 AM</td><td>#POS-2455</td><td>Espresso x2</td><td>$7.00</td><td>Card</td></tr>
+                            <tr><td>2025-03-24 06:45 PM</td><td>#POS-2454</td><td>Sandwich + Muffin</td><td>$10.15</td><td>Mobile</td></tr>
+                            <tr><td>2025-03-24 04:20 PM</td><td>#POS-2453</td><td>Cappuccino</td><td>$4.75</td><td>Cash</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        function renderStaff() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="placeholder-content">
+                    <span class="material-symbols-outlined" style="font-size: 48px;">badge</span>
+                    <h3>Staff & Cashiers</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin: 24px 0;">
+                        <div>👩‍💼 Emma Watson — Senior Cashier (Today: 23 sales)</div>
+                        <div>🧑‍💻 James Lee — Cashier (Today: 18 sales)</div>
+                        <div>👩‍🍳 Sofia Rodriguez — Barista / Cashier</div>
+                        <div>🧑‍🔧 Michael Chen — Inventory Manager</div>
+                    </div>
+                    <button class="btn-primary" style="width: auto;">➕ Add Staff Member</button>
+                </div>
+            `;
+        }
+        
+        function renderReports() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="dashboard-grid">
+                    <div class="stat-card">📈 Weekly Revenue: $8,942</div>
+                    <div class="stat-card">🏆 Top Product: Latte (142 units)</div>
+                    <div class="stat-card">⏱️ Peak Hour: 9AM-11AM</div>
+                </div>
+                <div class="recent-sales" style="padding: 24px;">
+                    <h3>📑 Sales Report (Last 30 Days)</h3>
+                    <p style="margin: 12px 0;">Total Transactions: 1,284 | Net Sales: $29,540</p>
+                    <button class="btn-primary" style="width: auto; margin-top: 12px;">Download Full Report (PDF)</button>
+                </div>
+            `;
+        }
+        
+        function renderSettings() {
+            document.getElementById('pageContent').innerHTML = `
+                <div class="placeholder-content">
+                    <span class="material-symbols-outlined" style="font-size: 48px;">tune</span>
+                    <h3>POS Configuration</h3>
+                    <div style="text-align: left; max-width: 400px; margin: 24px auto;">
+                        <label style="display: flex; justify-content: space-between;"><span>Receipt Auto-print</span> <input type="checkbox" checked></label>
+                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Tax Inclusive Pricing</span> <input type="checkbox"></label>
+                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Low Stock Alert</span> <input type="checkbox" checked></label>
+                        <button class="btn-primary" style="margin-top: 32px;">Save Preferences</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Navigation dispatcher
+        function navigateTo(page) {
+            currentPage = page;
+            document.getElementById('currentPageTitle').innerText = 
+                page === 'dashboard' ? 'POS Dashboard' :
+                page === 'profile' ? 'Store Profile' :
+                page === 'inventory' ? 'Inventory Management' :
+                page === 'counter' ? 'POS Counter' :
+                page === 'history' ? 'Sales History' :
+                page === 'staff' ? 'Staff Management' :
+                page === 'reports' ? 'Reports & Analytics' : 'POS Settings';
+            
+            // Render based on page
+            switch(page) {
+                case 'dashboard': renderDashboardWithChart(); break;
+                case 'profile': renderProfile(); break;
+                case 'inventory': renderInventory(); break;
+                case 'counter': renderCounter(); break;
+                case 'history': renderHistory(); break;
+                case 'staff': renderStaff(); break;
+                case 'reports': renderReports(); break;
+                case 'settings': renderSettings(); break;
+                default: renderDashboardWithChart();
+            }
+            
+            // Update active nav style
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.getAttribute('data-page') === page) item.classList.add('active');
+            });
+            if(window.innerWidth <= 768) sidebar.classList.remove('open');
+        }
+        
+        // Event binding
+        function bindNavEvents() {
+            document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+                const pageName = el.getAttribute('data-page');
+                if(pageName) {
+                    el.addEventListener('click', () => navigateTo(pageName));
+                }
+            });
+        }
+        
+        // Mobile menu toggle
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const sidebarEl = document.getElementById('sidebar');
+        if(menuToggleBtn) {
+            menuToggleBtn.addEventListener('click', () => sidebarEl.classList.toggle('open'));
+        }
+        document.addEventListener('click', (e) => {
+            if(window.innerWidth <= 768 && sidebarEl.classList.contains('open') && !sidebarEl.contains(e.target) && e.target !== menuToggleBtn) {
+                sidebarEl.classList.remove('open');
+            }
+        });
+        
+        // initial load
+        bindNavEvents();
+        navigateTo('dashboard');
+    </script>
+</body>
+</html>

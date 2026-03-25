@@ -1,0 +1,37 @@
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../../auth/entities/auth.entity';
+
+@Entity('staff_attendance')
+export class StaffAttendance {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'user_id' })
+  userId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @Column({ type: 'date' })
+  date: Date;
+
+  @Column({ name: 'check_in', type: 'time', nullable: true })
+  checkIn: string;
+
+  @Column({ name: 'check_out', type: 'time', nullable: true })
+  checkOut: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['present', 'absent', 'late', 'half_day'],
+    default: 'present'
+  })
+  status: string;
+
+  @Column({ type: 'text', nullable: true })
+  notes: string;
+
+  @CreateDateColumn({ type: 'datetime', precision: 6 })
+  createdAt: Date;
+}

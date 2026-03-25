@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>BluePOS | Complete Point of Sale System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --sidebar-width: 280px;
+            --topbar-height: 70px;
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid var(--border);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 20;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 24px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h2 {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(95deg, rgba(37,99,235,0.1), rgba(79,70,229,0.05));
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+        }
+
+        .topbar {
+            height: var(--topbar-height);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .page-container {
+            padding: 28px 32px;
+        }
+
+        /* Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        .stat-title {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* POS Counter */
+        .pos-container {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .pos-layout {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .products-panel {
+            flex: 2;
+            padding: 24px;
+            border-right: 1px solid var(--border);
+        }
+
+        .cart-panel {
+            flex: 1.2;
+            padding: 24px;
+            background: #fafcff;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .product-card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .product-card:hover {
+            border-color: var(--primary);
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fed7aa;
+            color: #9b2c1d;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .pos-layout {
+                flex-direction: column;
+            }
+            .products-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .page-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><span class="material-symbols-outlined">point_of_sale</span> BluePOS</h2>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active" data-page="dashboard">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-page="pos">
+                    <span class="material-symbols-outlined">shopping_cart</span>
+                    <span>POS Counter</span>
+                </div>
+                <div class="nav-item" data-page="products">
+                    <span class="material-symbols-outlined">inventory</span>
+                    <span>Products</span>
+                </div>
+                <div class="nav-item" data-page="sales">
+                    <span class="material-symbols-outlined">receipt</span>
+                    <span>Sales History</span>
+                </div>
+                <div class="nav-item" data-page="staff">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Staff</span>
+                </div>
+                <div class="nav-item" data-page="reports">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                    <span>Reports</span>
+                </div>
+                <div class="nav-item" data-page="attendance">
+                    <span class="material-symbols-outlined">event_available</span>
+                    <span>Attendance</span>
+                </div>
+                <div class="nav-item" id="logoutBtn">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Logout</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <div class="topbar">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div class="topbar-title" id="pageTitle">Dashboard</div>
+                <div class="user-info" id="userInfo"></div>
+            </div>
+            <div class="page-container" id="pageContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let token = localStorage.getItem('access_token');
+        let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        let cart = [];
+
+        // Check authentication
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        // API helper
+        async function apiCall(endpoint, options = {}) {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers,
+                },
+            });
+            if (response.status === 401) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+            return response.json();
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                loadPage(page);
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        document.getElementById('menuToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // Load pages
+        async function loadPage(page) {
+            document.getElementById('pageTitle').innerText = page.charAt(0).toUpperCase() + page.slice(1);
+            
+            switch(page) {
+                case 'dashboard':
+                    await loadDashboard();
+                    break;
+                case 'pos':
+                    await loadPOS();
+                    break;
+                case 'products':
+                    await loadProducts();
+                    break;
+                case 'sales':
+                    await loadSales();
+                    break;
+                case 'staff':
+                    await loadStaff();
+                    break;
+                case 'reports':
+                    await loadReports();
+                    break;
+                case 'attendance':
+                    await loadAttendance();
+                    break;
+            }
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            const [productsStats, salesStats] = await Promise.all([
+                apiCall('/products/stats'),
+                apiCall('/sales/stats')
+            ]);
+
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Revenue</div>
+                        <div class="stat-value">₱${(salesStats.totalRevenue || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Today's Sales</div>
+                        <div class="stat-value">₱${(salesStats.todayRevenue || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Products</div>
+                        <div class="stat-value">${productsStats.totalProducts || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Low Stock Items</div>
+                        <div class="stat-value">${productsStats.lowStockCount || 0}</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Sales</div>
+                        <div class="stat-value">${salesStats.totalSales || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Items Sold</div>
+                        <div class="stat-value">${salesStats.totalItems || 0}</div>
+                    </div>
+                </div>
+                <h3 style="margin: 24px 0 16px">Recent Transactions</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Invoice</th><th>Amount</th><th>Payment</th><th>Cashier</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                        ${(salesStats.recentSales || []).map(sale => `
+                            <tr>
+                                <td>${sale.invoiceNumber}</td>
+                                <td>₱${sale.totalAmount}</td>
+                                <td><span class="badge badge-success">${sale.paymentMethod}</span></td>
+                                <td>${sale.user?.name || 'N/A'}</td>
+                                <td>${new Date(sale.createdAt).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+        }
+
+        // POS Counter
+        async function loadPOS() {
+            const products = await apiCall('/products');
+            
+            const html = `
+                <div class="pos-container">
+                    <div class="pos-layout">
+                        <div class="products-panel">
+                            <h3>Products</h3>
+                            <div class="product-grid" id="productGrid">
+                                ${products.map(p => `
+                                    <div class="product-card" onclick="addToCart('${p.id}', '${p.name}', ${p.price})">
+                                        <div style="font-size: 32px;">☕</div>
+                                        <div style="font-weight: 600;">${p.name}</div>
+                                        <div style="color: var(--primary);">₱${p.price}</div>
+                                        <div style="font-size: 12px; color: var(--text-light);">Stock: ${p.stock_quantity}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="cart-panel">
+                            <h3>Current Sale</h3>
+                            <div id="cartItems" style="max-height: 300px; overflow-y: auto;"></div>
+                            <div style="margin: 20px 0; font-size: 20px; font-weight: 700;">Total: ₱<span id="cartTotal">0.00</span></div>
+                            <select id="paymentMethod" class="btn-primary" style="margin-bottom: 10px; background: white; color: var(--text-dark); border: 1px solid var(--border);">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="mobile">Mobile Payment</option>
+                            </select>
+                            <button class="btn-primary" onclick="checkout()">Complete Sale</button>
+                            <button class="btn-primary" onclick="clearCart()" style="margin-top: 10px; background: #ef4444;">Clear Cart</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+            
+            window.addToCart = (id, name, price) => {
+                const existing = cart.find(item => item.id === id);
+                if (existing) {
+                    existing.quantity++;
+                } else {
+                    cart.push({ id, name, price, quantity: 1 });
+                }
+                updateCartDisplay();
+            };
+            
+            window.clearCart = () => {
+                cart = [];
+                updateCartDisplay();
+            };
+            
+            window.checkout = async () => {
+                if (cart.length === 0) {
+                    alert('Cart is empty!');
+                    return;
+                }
+                
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                
+                const saleData = {
+                    items: cart.map(item => ({
+                        productId: item.id,
+                        quantity: item.quantity,
+                        unitPrice: item.price,
+                        subtotal: item.price * item.quantity
+                    })),
+                    totalAmount: total,
+                    paymentMethod: paymentMethod
+                };
+                
+                const result = await apiCall('/sales', {
+                    method: 'POST',
+                    body: JSON.stringify(saleData)
+                });
+                
+                if (result.id) {
+                    alert(`Sale completed! Invoice: ${result.invoiceNumber}`);
+                    cart = [];
+                    updateCartDisplay();
+                    loadDashboard();
+                } else {
+                    alert('Sale failed!');
+                }
+            };
+            
+            function updateCartDisplay() {
+                const cartDiv = document.getElementById('cartItems');
+                const totalSpan = document.getElementById('cartTotal');
+                let total = 0;
+                
+                if (cart.length === 0) {
+                    cartDiv.innerHTML = '<div style="text-align: center; color: var(--text-light);">Cart empty</div>';
+                    totalSpan.innerText = '0.00';
+                    return;
+                }
+                
+                cartDiv.innerHTML = cart.map((item, idx) => {
+                    const subtotal = item.price * item.quantity;
+                    total += subtotal;
+                    return `
+                        <div class="cart-item">
+                            <div><strong>${item.name}</strong> x ${item.quantity}</div>
+                            <div>₱${subtotal.toFixed(2)} 
+                                <button onclick="removeFromCart(${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer;">✖</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                totalSpan.innerText = total.toFixed(2);
+            }
+            
+            window.removeFromCart = (idx) => {
+                cart.splice(idx, 1);
+                updateCartDisplay();
+            };
+        }
+
+        // Products Management
+        async function loadProducts() {
+            const products = await apiCall('/products');
+            
+            const html = `
+                <button class="btn-primary" onclick="showAddProductModal()" style="width: auto; margin-bottom: 20px;">+ Add Product</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>SKU</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${products.map(p => `
+                            <tr>
+                                <td>${p.sku}</td>
+                                <td>${p.name}</td>
+                                <td>${p.category || '-'}</td>
+                                <td>₱${p.price}</td>
+                                <td>${p.stock_quantity}</td>
+                                <td>${p.stock_quantity <= p.min_stock_level ? '<span class="badge badge-warning">Low Stock</span>' : '<span class="badge badge-success">In Stock</span>'}</td>
+                                <td><button onclick="editProduct('${p.id}')">Edit</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+            
+            window.showAddProductModal = () => {
+                const name = prompt('Product name:');
+                const price = prompt('Price:');
+                const sku = prompt('SKU:');
+                if (name && price && sku) {
+                    apiCall('/products', {
+                        method: 'POST',
+                        body: JSON.stringify({ name, price: parseFloat(price), sku, stock_quantity: 0 })
+                    }).then(() => loadProducts());
+                }
+            };
+            
+            window.editProduct = (id) => {
+                const stock = prompt('Update stock quantity:');
+                if (stock !== null) {
+                    apiCall(`/products/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ stock_quantity: parseInt(stock) })
+                    }).then(() => loadProducts());
+                }
+            };
+        }
+
+        // Sales History
+        async function loadSales() {
+            const sales = await apiCall('/sales');
+            
+            const html = `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Invoice #</th><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Cashier</th></tr>
+                    </thead>
+                    <tbody>
+                        ${(sales.data || []).map(sale => `
+                            <tr>
+                                <td>${sale.invoiceNumber}</td>
+                                <td>${new Date(sale.createdAt).toLocaleString()}</td>
+                                <td>${sale.items?.length || 0}</td>
+                                <td>₱${sale.totalAmount}</td>
+                                <td>${sale.paymentMethod}</td>
+                                <td>${sale.user?.name || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+        }
+
+        // Staff Management
+        async function loadStaff() {
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Staff</div>
+                        <div class="stat-value">2</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Active Today</div>
+                        <div class="stat-value">2</div>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Andre</td><td>andre@gmail.com</td><td>+639238437423</td><td>Staff</td><td><span class="badge badge-success">Active</span></td></tr>
+                        <tr><td>Mike</td><td>mike@gmail.com</td><td>+639234773472</td><td>Staff</td><td><span class="badge badge-success">Active</span></td></tr>
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+        }
+
+        // Reports
+        async function loadReports() {
+            const salesStats = await apiCall('/sales/stats');
+            
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Sales (All Time)</div>
+                        <div class="stat-value">${salesStats.totalSales || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Revenue</div>
+                        <div class="stat-value">₱${(salesStats.totalRevenue || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Items Sold</div>
+                        <div class="stat-value">${salesStats.totalItems || 0}</div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="window.print()" style="width: auto; margin-top: 20px;">Print Report</button>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+        }
+
+        // Attendance
+        async function loadAttendance() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Today's Date</div>
+                        <div class="stat-value">${today}</div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="checkIn()" style="width: auto; margin-right: 10px;">Check In</button>
+                <button class="btn-primary" onclick="checkOut()" style="width: auto; background: #ef4444;">Check Out</button>
+            `;
+            document.getElementById('pageContent').innerHTML = html;
+            
+            window.checkIn = async () => {
+                const result = await apiCall('/staff/check-in', {
+                    method: 'POST',
+                    body: JSON.stringify({ status: 'present' })
+                });
+                alert('Checked in successfully!');
+            };
+            
+            window.checkOut = async () => {
+                const result = await apiCall('/staff/check-out', {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                });
+                alert('Checked out successfully!');
+            };
+        }
+
+        // Initial load
+        loadDashboard();
+        
+        // Display user info
+        if (currentUser.name) {
+            document.getElementById('userInfo').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>👤 ${currentUser.name}</span>
+                    <span style="font-size: 12px; background: #eef2ff; padding: 4px 8px; border-radius: 20px;">${currentUser.userType}</span>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

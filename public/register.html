@@ -2,475 +2,830 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Register - Modern Auth System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <style>:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #3b82f6;
+    --primary-smoky: #1e3a8a;
+    --secondary: #4f46e5;
+    --secondary-smoky: #3730a3;
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --text-dark: #0f172a;
+    --text-light: #475569;
+    --bg-light: #f1f5f9;
+    --bg-white: #ffffff;
+    --bg-smoky: #eef2ff;
+    --border: #cbd5e1;
+    --radius: 12px;
+    --transition: all 0.2s ease;
+    --gradient-start: #2563eb;
+    --gradient-end: #4f46e5;
+    --gradient-smoky: #1e1b4b;
+}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            width: 100%;
-            max-width: 500px;
-            animation: slideUp 0.5s ease;
-        }
+html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+}
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    width: 100%;
+    height: 100%;
+    color: var(--text-dark);
+    font-size: 14px;
+    overflow: hidden;
+    position: fixed;
+}
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(0px);
+    overflow: hidden;
+}
 
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+/* Progress Bar - Fixed at the very top */
+.progress-bar {
+    padding: 20px 30px;
+    background: rgba(255, 255, 255, 0.98);
+    border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
 
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
 
-        /* Progress Bar */
-        .progress-bar {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e0e0e0;
-        }
+.steps::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-light), var(--secondary), var(--primary-light));
+    z-index: 1;
+}
 
-        .steps {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-        }
+.step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
 
-        .steps::before {
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #e0e0e0;
-            z-index: 1;
-        }
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+}
 
-        .step {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            flex: 1;
-        }
+.step.active .step-number {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
 
-        .step-number {
-            width: 32px;
-            height: 32px;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 8px;
-            font-weight: 600;
-            color: #999;
-            transition: all 0.3s ease;
-        }
+.step.completed .step-number {
+    background: linear-gradient(135deg, var(--success), #059669);
+    border-color: var(--success);
+    color: white;
+}
 
-        .step.active .step-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
-            color: white;
-        }
+.step-label {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 500;
+}
 
-        .step.completed .step-number {
-            background: #48bb78;
-            border-color: #48bb78;
-            color: white;
-        }
+.step.active .step-label {
+    color: var(--primary);
+    font-weight: 600;
+}
 
-        .step-label {
-            font-size: 12px;
-            color: #666;
-            font-weight: 500;
-        }
+/* Content area - Scrollable with larger top padding for better spacing */
+.content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 48px 24px 24px 24px;
+    background: transparent;
+}
 
-        .step.active .step-label {
-            color: #667eea;
-            font-weight: 600;
-        }
+/* Form Steps */
+.form-step {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
 
-        .form-container {
-            padding: 30px;
-            max-height: 550px;
-            overflow-y: auto;
-        }
+.form-step.active-step {
+    display: block;
+}
 
-        .form-container::-webkit-scrollbar {
-            width: 6px;
-        }
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
 
-        .form-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
+/* Input Groups - Added extra margin at the top of first element */
+.form-step.active-step .input-group:first-of-type {
+    margin-top: 8px;
+}
 
-        .form-container::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
+/* Profile Section - Added spacing for the first section */
+.profile-section {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+}
 
-        .form-step {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
+/* Additional spacing for profile section when it's first */
+.form-step.active-step .profile-section:first-of-type {
+    margin-top: 8px;
+}
 
-        .form-step.active-step {
-            display: block;
-        }
+.input-group {
+    margin-bottom: 20px;
+}
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
+.input-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+.input-wrapper {
+    position: relative;
+}
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
+.input-field, .select-field {
+    width: 100%;
+    padding: 14px 40px 14px 14px;
+    font-size: 14px;
+    background: var(--bg-light);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
+    transition: var(--transition);
+}
 
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            outline: none;
-            font-family: inherit;
-        }
+.select-field {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+}
 
-        input:focus, select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+.input-field:focus, .select-field:focus {
+    outline: none;
+    background: var(--bg-white);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
 
-        input.error {
-            border-color: #f56565;
-            background-color: #fff5f5;
-        }
+.input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 16px;
+    pointer-events: auto;
+}
 
-        input.success {
-            border-color: #48bb78;
-            background-color: #f0fff4;
-        }
+.input-icon:hover {
+    color: var(--primary);
+}
 
-        /* Profile Picture Styles */
-        .profile-section {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
+/* Profile Picture Styles */
+.profile-pic-container {
+    text-align: center;
+    flex-shrink: 0;
+}
 
-        .profile-pic-container {
-            text-align: center;
-            flex-shrink: 0;
-        }
+.profile-pic-wrapper {
+    position: relative;
+    display: inline-block;
+}
 
-        .profile-pic-wrapper {
-            position: relative;
-            display: inline-block;
-        }
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary);
+    background: var(--bg-light);
+}
 
-        .profile-pic {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #667eea;
-            background: #f0f0f0;
-        }
+.profile-pic-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+}
 
-        .profile-pic-placeholder {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 3px solid white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+.profile-pic-placeholder span {
+    font-size: 40px;
+    color: white;
+}
 
-        .profile-pic-placeholder span {
-            font-size: 40px;
-            color: white;
-        }
+.upload-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
-        .upload-btn {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background: #667eea;
-            color: white;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 2px solid white;
-            transition: all 0.3s ease;
-        }
+.upload-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
 
-        .upload-btn:hover {
-            background: #764ba2;
-            transform: scale(1.1);
-        }
+#profilePicInput {
+    display: none;
+}
 
-        #profilePicInput {
-            display: none;
-        }
+.profile-info {
+    flex: 1;
+}
 
-        .profile-info {
-            flex: 1;
-        }
+.preview-text {
+    font-size: 12px;
+    color: var(--primary);
+    margin-top: 10px;
+    text-align: center;
+}
 
-        .preview-text {
-            font-size: 12px;
-            color: #667eea;
-            margin-top: 10px;
-            text-align: center;
-        }
+.phone-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
 
-        .phone-input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+.country-code {
+    width: 80px;
+    background: var(--bg-light);
+    text-align: center;
+    font-weight: 600;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
+}
 
-        .country-code {
-            width: 80px;
-            background: #f5f5f5;
-            text-align: center;
-            font-weight: 600;
-        }
+.phone-number {
+    flex: 1;
+}
 
-        .phone-number {
-            flex: 1;
-        }
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
 
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
+.btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+}
 
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+.btn-prev {
+    background: rgba(241, 245, 249, 0.8);
+    color: var(--text-dark);
+    border: 1.5px solid var(--border);
+    backdrop-filter: blur(10px);
+}
 
-        .btn-prev {
-            background: #f0f0f0;
-            color: #666;
-        }
+.btn-prev:hover {
+    background: var(--bg-light);
+    border-color: var(--primary-light);
+}
 
-        .btn-prev:hover {
-            background: #e0e0e0;
-            transform: translateY(-2px);
-        }
+.btn-next, .btn-submit {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
 
-        .btn-next, .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+.btn-next:hover, .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    background: linear-gradient(135deg, var(--primary-dark), var(--secondary-smoky));
+}
 
-        .btn-next:hover, .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
+.btn:active {
+    transform: translateY(0);
+}
 
-        .btn:active {
-            transform: translateY(0);
-        }
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
 
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
+/* Alert Messages */
+.alert {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: none;
+}
 
-        .login-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
+.alert.success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border: 1px solid #10b981;
+    display: block;
+}
 
-        .login-link a:hover {
-            text-decoration: underline;
-        }
+.alert.error {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border: 1px solid #ef4444;
+    display: block;
+}
 
-        .alert {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-        }
+/* Loader */
+.loader {
+    display: none;
+    text-align: center;
+    margin-top: 10px;
+}
 
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: block;
-        }
+.loader.active {
+    display: block;
+}
 
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: block;
-        }
+.spinner {
+    border: 3px solid rgba(37, 99, 235, 0.1);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
 
-        .loader {
-            display: none;
-            text-align: center;
-            margin-top: 10px;
-        }
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 
-        .loader.active {
-            display: block;
-        }
+/* Error and Success States */
+input.error, select.error {
+    border-color: var(--error);
+    background-color: #fef2f2;
+}
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
+input.success, select.success {
+    border-color: var(--success);
+    background-color: #f0fdf4;
+}
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+.error-message {
+    color: var(--error);
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
 
-        .hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-        }
+.error-message.show {
+    display: block;
+}
 
-        .error-message {
-            color: #f56565;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-        }
+.hint {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 5px;
+}
 
-        .error-message.show {
-            display: block;
-        }
+/* Login Link */
+.login-link {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-light);
+    font-size: 14px;
+}
 
-        @media (max-width: 480px) {
-            .profile-section {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-            .container {
-                max-width: 100%;
-            }
-            body {
-                padding: 10px;
-            }
-        }
+.login-link a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.login-link a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-light);
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid rgba(37, 99, 235, 0.1);
+    flex-shrink: 0;
+}
+
+/* Scrollbar Styling */
+.content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 3px;
+}
+
+/* Desktop Styles */
+@media (min-width: 768px) {
+    html {
+        overflow: auto;
+        position: static;
+    }
+
+    body {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e6f0ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        overflow: auto;
+        position: static;
+        min-height: 100vh;
+        height: auto;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        max-height: 90vh;
+        min-height: auto;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .content {
+        padding: 56px 40px 30px 40px;
+    }
+    
+    /* Extra spacing for first input on desktop */
+    .form-step.active-step .input-group:first-of-type,
+    .form-step.active-step .profile-section:first-of-type {
+        margin-top: 12px;
+    }
+
+    .progress-bar {
+        padding: 20px 40px;
+        background: rgba(255, 255, 255, 0.98);
+    }
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 650px;
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 767px) {
+    html {
+        height: 100%;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        width: 100%;
+        overflow: hidden;
+        position: fixed;
+    }
+
+    body {
+        height: 100%;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        width: 100%;
+        overflow: hidden;
+        position: fixed;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e6f0ff 100%);
+    }
+
+    .container {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        max-height: -webkit-fill-available;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .progress-bar {
+        padding: 15px 20px;
+        flex-shrink: 0;
+    }
+
+    .content {
+        padding: 40px 20px 20px 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        flex: 1;
+    }
+    
+    /* Extra spacing for first input on mobile */
+    .form-step.active-step .input-group:first-of-type,
+    .form-step.active-step .profile-section:first-of-type {
+        margin-top: 8px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .section-subtitle {
+        font-size: 13px;
+        margin-bottom: 25px;
+    }
+    
+    .input-group {
+        margin-bottom: 18px;
+    }
+
+    .input-field, .select-field {
+        font-size: 16px;
+        padding: 12px 40px 12px 12px;
+    }
+
+    .btn {
+        padding: 13px;
+        font-size: 14px;
+    }
+
+    .profile-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .step-label {
+        font-size: 10px;
+    }
+
+    .steps::before {
+        top: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 36px 16px 16px 16px;
+    }
+    
+    .form-step.active-step .input-group:first-of-type,
+    .form-step.active-step .profile-section:first-of-type {
+        margin-top: 6px;
+    }
+
+    .progress-bar {
+        padding: 12px 16px;
+    }
+
+    .section-title {
+        font-size: 19px;
+    }
+
+    .section-subtitle {
+        font-size: 12px;
+        margin-bottom: 22px;
+    }
+
+    .input-group {
+        margin-bottom: 16px;
+    }
+
+    .input-label {
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .input-field, .select-field {
+        padding: 11px 36px 11px 11px;
+    }
+
+    .btn {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .profile-pic, .profile-pic-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-pic-placeholder span {
+        font-size: 32px;
+    }
+
+    .step-number {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .step-label {
+        font-size: 9px;
+    }
+
+    .steps::before {
+        top: 12px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 359px) {
+    .content {
+        padding: 32px 14px 14px 14px;
+    }
+    
+    .form-step.active-step .input-group:first-of-type,
+    .form-step.active-step .profile-section:first-of-type {
+        margin-top: 4px;
+    }
+}
+
+/* Prevent zoom on input focus for mobile browsers */
+@media (max-width: 767px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Hardware acceleration for smoother scrolling on Android */
+.content {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+}
+
+/* Landscape mode optimization */
+@media (max-width: 767px) and (max-height: 600px) and (orientation: landscape) {
+    .progress-bar {
+        padding: 10px 20px;
+    }
+
+    .content {
+        padding: 28px 20px 12px 20px;
+    }
+    
+    .form-step.active-step .input-group:first-of-type,
+    .form-step.active-step .profile-section:first-of-type {
+        margin-top: 4px;
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .step-label {
+        font-size: 9px;
+    }
+
+    .steps::before {
+        top: 11px;
+    }
+
+    .input-group {
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        padding: 8px;
+        margin-top: 10px;
+    }
+}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Create Account</h1>
-            <p>Join us today and start your journey</p>
-        </div>
-
-        <div class="progress-bar">
-            <div class="steps">
-                <div class="step active" id="step1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Profile</div>
-                </div>
-                <div class="step" id="step2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Contact</div>
-                </div>
-                <div class="step" id="step3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Business</div>
-                </div>
-                <div class="step" id="step4">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Security</div>
+        <div class="content">
+            <div class="progress-bar">
+                <div class="steps">
+                    <div class="step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Profile</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Contact</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Business</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Security</div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="form-container">
+            <br><br><br>
             <div id="alert" class="alert"></div>
             <form id="registerForm" enctype="multipart/form-data">
                 <!-- Step 1: Profile Picture and Name -->
@@ -489,9 +844,11 @@
                         </div>
                         
                         <div class="profile-info">
-                            <div class="form-group">
-                                <label>Full Name *</label>
-                                <input type="text" id="name" placeholder="Juan Dela Cruz">
+                            <div class="input-group">
+                                <label class="input-label">Full Name *</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="name" class="input-field" placeholder="Juan Dela Cruz">
+                                </div>
                                 <div class="error-message" id="nameError">Please enter your full name</div>
                             </div>
                         </div>
@@ -500,17 +857,19 @@
 
                 <!-- Step 2: Contact Information -->
                 <div class="form-step" id="step2Form">
-                    <div class="form-group">
-                        <label>Email Address *</label>
-                        <input type="email" id="email" placeholder="juan@example.com">
+                    <div class="input-group">
+                        <label class="input-label">Email Address *</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="email" class="input-field" placeholder="juan@example.com">
+                        </div>
                         <div class="error-message" id="emailError">Please enter a valid email address</div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Phone Number *</label>
+                    <div class="input-group">
+                        <label class="input-label">Phone Number *</label>
                         <div class="phone-input-group">
                             <input type="text" class="country-code" value="+63" readonly>
-                            <input type="tel" id="phoneNumber" class="phone-number" placeholder="9123456789">
+                            <input type="tel" id="phoneNumber" class="input-field phone-number" placeholder="9123456789">
                         </div>
                         <div class="hint">Enter your 10-digit mobile number (e.g., 9123456789)</div>
                         <div class="error-message" id="phoneError">Please enter a valid Philippine mobile number</div>
@@ -519,33 +878,41 @@
 
                 <!-- Step 3: Business Information -->
                 <div class="form-step" id="step3Form">
-                    <div class="form-group">
-                        <label>Business Name *</label>
-                        <input type="text" id="businessName" placeholder="Enter your business name">
+                    <div class="input-group">
+                        <label class="input-label">Business Name *</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="businessName" class="input-field" placeholder="Enter your business name">
+                        </div>
                         <div class="error-message" id="businessError">Please enter your business name</div>
                     </div>
                     
-                    <div class="form-group">
-                        <label>User Type *</label>
-                        <select id="userType">
-                            <option value="staff">Staff</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                    <div class="input-group">
+                        <label class="input-label">User Type *</label>
+                        <div class="input-wrapper">
+                            <select id="userType" class="select-field">
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Step 4: Security -->
                 <div class="form-step" id="step4Form">
-                    <div class="form-group">
-                        <label>Password *</label>
-                        <input type="password" id="password" placeholder="Create a password (min 6 characters)">
+                    <div class="input-group">
+                        <label class="input-label">Password *</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" class="input-field" placeholder="Create a password (min 6 characters)">
+                        </div>
                         <div class="error-message" id="passwordError">Password must be at least 6 characters</div>
                         <div class="hint">Password must be at least 6 characters long</div>
                     </div>
                     
-                    <div class="form-group">
-                        <label>Confirm Password *</label>
-                        <input type="password" id="confirmPassword" placeholder="Confirm your password">
+                    <div class="input-group">
+                        <label class="input-label">Confirm Password *</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" class="input-field" placeholder="Confirm your password">
+                        </div>
                         <div class="error-message" id="confirmError">Passwords do not match</div>
                     </div>
                 </div>
@@ -562,6 +929,9 @@
             <div class="login-link">
                 Already have an account? <a href="login.html">Login here</a>
             </div>
+        </div>
+        <div class="footer">
+            © 2024 Modern Auth System. All rights reserved.
         </div>
     </div>
 
