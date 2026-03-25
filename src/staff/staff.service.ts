@@ -1,109 +1,134 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { StaffAttendance } from './entities/staff-attendance.entity';
-import { CreateAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
+import { InviteStaffDto } from './dto/invite-staff.dto';
+import { User, UserType } from '../auth/entities/auth.entity';
 
 @Injectable()
 export class StaffService {
   constructor(
     @InjectRepository(StaffAttendance)
     private attendanceRepository: Repository<StaffAttendance>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
-  async checkIn(userId: string, createDto: CreateAttendanceDto): Promise<StaffAttendance> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  private formatPhilippinePhone(phoneNumber: string): string {
+    let cleaned = phoneNumber.replace(/\D/g, '');
 
-    let attendance = await this.attendanceRepository.findOne({
-      where: {
-        userId,
-        date: today,
-      },
-    });
-
-    if (attendance && attendance.checkIn) {
-      throw new BadRequestException('Already checked in today');
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
     }
 
-    if (!attendance) {
-      attendance = this.attendanceRepository.create({
-        userId,
-        date: today,
-        checkIn: createDto.checkIn || new Date().toLocaleTimeString(),
-        status: createDto.status || 'present',
-        notes: createDto.notes,
-      });
-    } else {
-      attendance.checkIn = createDto.checkIn || new Date().toLocaleTimeString();
-      attendance.status = createDto.status || 'present';
-      if (createDto.notes) attendance.notes = createDto.notes;
+    if (cleaned.startsWith('63')) {
+      cleaned = cleaned.substring(2);
     }
 
-    return this.attendanceRepository.save(attendance);
+    const mobileRegex = /^9\d{9}$/;
+    if (!mobileRegex.test(cleaned)) {
+      throw new BadRequestException('Invalid Philippine phone number. Use 9XXXXXXXXX format.');
+    }
+
+    return `+63${cleaned}`;
   }
 
-  async checkOut(userId: string, updateDto: UpdateAttendanceDto): Promise<StaffAttendance> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const attendance = await this.attendanceRepository.findOne({
-      where: {
-        userId,
-        date: today,
-      },
+  async getStaffList(): Promise<Partial<User>[]> {
+    const staff = await this.userRepository.find({
+      where: { userType: UserType.STAFF },
+      order: { createdAt: 'DESC' },
     });
 
-    if (!attendance) {
-      throw new NotFoundException('No check-in record found for today');
-    }
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setHours(23, 59, 59, 999);
 
-    if (attendance.checkOut) {
-      throw new BadRequestException('Already checked out');
-    }
-
-    attendance.checkOut = updateDto.checkOut || new Date().toLocaleTimeString();
-    if (updateDto.notes) attendance.notes = updateDto.notes;
-
-    return this.attendanceRepository.save(attendance);
-  }
-
-  async getAttendance(userId: string, startDate: Date, endDate: Date): Promise<StaffAttendance[]> {
-    return this.attendanceRepository.find({
+    const todayAttendance = await this.attendanceRepository.find({
       where: {
-        userId,
-        date: Between(startDate, endDate),
+        date: Between(todayStart, todayEnd),
       },
-      order: { date: 'DESC' },
-    });
-  }
-
-  async getAllStaffAttendance(startDate: Date, endDate: Date): Promise<any> {
-    const attendances = await this.attendanceRepository.find({
-      where: {
-        date: Between(startDate, endDate),
-      },
-      order: { date: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
 
-    const summary = {
-      totalDays: 0,
-      present: 0,
-      absent: 0,
-      late: 0,
-      halfDay: 0,
-    };
-
-    attendances.forEach(att => {
-      summary.totalDays++;
-      switch (att.status) {
-        case 'present': summary.present++; break;
-        case 'absent': summary.absent++; break;
-        case 'late': summary.late++; break;
-        case 'half_day': summary.halfDay++; break;
+    const attendanceByUser = new Map<string, StaffAttendance>();
+    todayAttendance.forEach((attendance) => {
+      if (!attendanceByUser.has(attendance.userId)) {
+        attendanceByUser.set(attendance.userId, attendance);
       }
     });
 
-    return { attendances, summary };
+    return staff.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phoneNumber: u.phoneNumber,
+      businessName: u.businessName,
+      userType: u.userType,
+      createdAt: u.createdAt,
+      status: attendanceByUser.get(u.id)?.checkIn && !attendanceByUser.get(u.id)?.checkOut ? 'active' : 'inactive',
+      checkIn: attendanceByUser.get(u.id)?.checkIn || null,
+      checkOut: attendanceByUser.get(u.id)?.checkOut || null,
+    }));
+  }
+
+  async inviteStaff(adminUserId: string, inviteDto: InviteStaffDto): Promise<any> {
+    const admin = await this.userRepository.findOne({ where: { id: adminUserId } });
+    if (!admin || admin.userType !== UserType.ADMIN) {
+      throw new BadRequestException('Only admin can invite staff');
+    }
+
+    const formattedPhone = this.formatPhilippinePhone(inviteDto.phoneNumber);
+
+    const existing = await this.userRepository.findOne({
+      where: [{ email: inviteDto.email }, { phoneNumber: formattedPhone }],
+    });
+
+    if (existing) {
+      if (existing.userType === UserType.STAFF) {
+        return {
+          success: true,
+          existing: true,
+          message: 'Staff already exists',
+          data: {
+            id: existing.id,
+            name: existing.name,
+            email: existing.email,
+            phoneNumber: existing.phoneNumber,
+            userType: existing.userType,
+          },
+        };
+      }
+
+      throw new BadRequestException('A non-staff account already exists with this email or phone number');
+    }
+
+    const tempPassword = `Temp${Math.floor(100000 + Math.random() * 900000)}!`;
+
+    const user = this.userRepository.create({
+      name: inviteDto.name,
+      email: inviteDto.email,
+      phoneNumber: formattedPhone,
+      businessName: inviteDto.businessName || admin.businessName,
+      userType: UserType.STAFF,
+      password: tempPassword,
+      profilePic: null,
+    });
+
+    const saved = await this.userRepository.save(user);
+
+    return {
+      success: true,
+      existing: false,
+      message: 'Staff invited successfully',
+      data: {
+        id: saved.id,
+        name: saved.name,
+        email: saved.email,
+        phoneNumber: saved.phoneNumber,
+        userType: saved.userType,
+        temporaryPassword: tempPassword,
+      },
+    };
   }
 }

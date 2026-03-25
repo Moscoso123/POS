@@ -3,12 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/products.entity';
 import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
+import { InventoryTransaction } from './entities/inventory-transaction.entity';
+import { InventoryAdjustmentDto } from './dto/inventory-adjustment.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(InventoryTransaction)
+    private inventoryTransactionRepository: Repository<InventoryTransaction>,
   ) {}
 
   async create(createProductDto: CreateProductDto, userId: string): Promise<Product> {
@@ -57,6 +61,7 @@ export class ProductsService {
 
   async updateStock(id: string, quantity: number, type: string, userId: string, referenceId?: string): Promise<Product> {
     const product = await this.findOne(id);
+    const previousStock = product.stock_quantity;
     let newStock = product.stock_quantity;
 
     if (type === 'sale') {
@@ -73,7 +78,111 @@ export class ProductsService {
     product.stock_quantity = newStock;
     await this.productRepository.save(product);
 
+    await this.inventoryTransactionRepository.save(
+      this.inventoryTransactionRepository.create({
+        productId: id,
+        transactionType: type,
+        quantity,
+        previousStock,
+        newStock,
+        referenceId,
+        userId,
+        notes: type === 'sale' ? 'Auto deduction from sale transaction' : undefined,
+      }),
+    );
+
     return product;
+  }
+
+  async adjustInventory(dto: InventoryAdjustmentDto, userId: string): Promise<Product> {
+    const product = await this.findOne(dto.productId);
+    const previousStock = product.stock_quantity;
+    let newStock = previousStock;
+
+    if (dto.transactionType === 'adjustment') {
+      newStock = dto.quantity;
+    } else {
+      newStock = previousStock + dto.quantity;
+    }
+
+    product.stock_quantity = newStock;
+    await this.productRepository.save(product);
+
+    await this.inventoryTransactionRepository.save(
+      this.inventoryTransactionRepository.create({
+        productId: product.id,
+        transactionType: dto.transactionType,
+        quantity: dto.quantity,
+        previousStock,
+        newStock,
+        notes: dto.notes || undefined,
+        userId,
+      }),
+    );
+
+    return product;
+  }
+
+  async getRecentInventoryTransactions(limit = 20): Promise<InventoryTransaction[]> {
+    return this.inventoryTransactionRepository.find({
+      relations: ['product'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
+
+  async getProductHistory(productId: string, limit = 100): Promise<InventoryTransaction[]> {
+    await this.findOne(productId);
+
+    return this.inventoryTransactionRepository.find({
+      where: { productId },
+      relations: ['product', 'user'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
+
+  async getInventoryChartData(days = 7): Promise<{ labels: string[]; in: number[]; out: number[] }> {
+    const safeDays = Math.max(1, Math.min(days, 30));
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (safeDays - 1));
+
+    const txns = await this.inventoryTransactionRepository
+      .createQueryBuilder('t')
+      .where('t.createdAt >= :start', { start })
+      .orderBy('t.createdAt', 'ASC')
+      .getMany();
+
+    const labels: string[] = [];
+    const incomingMap = new Map<string, number>();
+    const outgoingMap = new Map<string, number>();
+
+    for (let i = 0; i < safeDays; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      labels.push(key);
+      incomingMap.set(key, 0);
+      outgoingMap.set(key, 0);
+    }
+
+    txns.forEach((txn) => {
+      const key = new Date(txn.createdAt).toISOString().slice(0, 10);
+      if (!incomingMap.has(key)) return;
+
+      if (txn.transactionType === 'sale') {
+        outgoingMap.set(key, (outgoingMap.get(key) || 0) + Number(txn.quantity));
+      } else {
+        incomingMap.set(key, (incomingMap.get(key) || 0) + Number(txn.quantity));
+      }
+    });
+
+    return {
+      labels,
+      in: labels.map((l) => incomingMap.get(l) || 0),
+      out: labels.map((l) => outgoingMap.get(l) || 0),
+    };
   }
 
   async remove(id: string): Promise<void> {

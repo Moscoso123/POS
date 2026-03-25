@@ -1,10 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
+
+  app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });
   
   // Enable CORS
   app.enableCors({
@@ -13,44 +18,10 @@ async function bootstrap() {
     credentials: true,
   });
   
-  // Add a simple root route
-  app.use('/', (req, res) => {
-    res.json({
-      message: 'BluePOS API is running!',
-      version: '1.0.0',
-      endpoints: {
-        auth: {
-          login: 'POST /auth/login',
-          register: 'POST /auth/register',
-        },
-        products: {
-          list: 'GET /products',
-          create: 'POST /products',
-          get: 'GET /products/:id',
-          update: 'PUT /products/:id',
-          delete: 'DELETE /products/:id',
-          stats: 'GET /products/stats',
-          lowStock: 'GET /products/low-stock',
-        },
-        sales: {
-          list: 'GET /sales',
-          create: 'POST /sales',
-          get: 'GET /sales/:id',
-          stats: 'GET /sales/stats',
-        },
-        staff: {
-          checkIn: 'POST /staff/check-in',
-          checkOut: 'POST /staff/check-out',
-          attendance: 'GET /staff/attendance',
-          allAttendance: 'GET /staff/attendance/all',
-        },
-      },
-    });
-  });
-  
   const port = process.env.PORT || 3001;
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
-  logger.log(`Test the API at: http://localhost:${port}/`);
+  logger.log(`Frontend login page: http://localhost:${port}/login.html`);
+  logger.log(`API health endpoint: http://localhost:${port}/health`);
 }
 bootstrap();

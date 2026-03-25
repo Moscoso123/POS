@@ -1,38 +1,26 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { StaffService } from './staff.service';
-import { CreateAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
+import { InviteStaffDto } from './dto/invite-staff.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('staff')
 @UseGuards(JwtAuthGuard)
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
-  @Post('check-in')
-  checkIn(@Request() req, @Body() createDto: CreateAttendanceDto) {
-    return this.staffService.checkIn(req.user.userId, createDto);
+  @Get('list')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  getStaffList() {
+    return this.staffService.getStaffList();
   }
 
-  @Post('check-out')
-  checkOut(@Request() req, @Body() updateDto: UpdateAttendanceDto) {
-    return this.staffService.checkOut(req.user.userId, updateDto);
-  }
-
-  @Get('attendance')
-  getAttendance(
-    @Request() req,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return this.staffService.getAttendance(req.user.userId, start, end);
-  }
-
-  @Get('attendance/all')
-  getAllAttendance(@Query('startDate') startDate: string, @Query('endDate') endDate: string) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return this.staffService.getAllStaffAttendance(start, end);
+  @Post('invite')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  inviteStaff(@Request() req, @Body() inviteDto: InviteStaffDto) {
+    return this.staffService.inviteStaff(req.user.userId, inviteDto);
   }
 }

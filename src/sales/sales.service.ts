@@ -85,11 +85,11 @@ export class SalesService {
     });
 
     const totalSales = sales.length;
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
 
-    // Get sale items count
+    // Sum quantities to represent actual items sold
     const saleItems = await this.saleItemRepository.find();
-    const totalItems = saleItems.length;
+    const totalItems = saleItems.reduce((sum, item) => sum + Number(item.quantity), 0);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -102,7 +102,7 @@ export class SalesService {
       },
     });
 
-    const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const todayRevenue = todaySales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
 
     const recentSales = await this.saleRepository.find({
       order: { createdAt: 'DESC' },

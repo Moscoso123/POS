@@ -31,13 +31,13 @@ export class InventoryTransaction {
   newStock: number;
 
   @Column({ name: 'reference_id', nullable: true })
-  referenceId: string;
+  referenceId?: string;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes?: string;
 
   @Column({ name: 'user_id', nullable: true })
-  userId: string;
+  userId?: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { User } from '../../auth/entities/auth.entity';
+import { SaleItem } from './sale-item.entity';
 
 @Entity('sales')
 export class Sale {
@@ -10,6 +12,10 @@ export class Sale {
 
   @Column({ name: 'user_id' })
   userId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
   totalAmount: number;
@@ -37,4 +43,7 @@ export class Sale {
 
   @CreateDateColumn({ name: 'createdAt', type: 'datetime', precision: 6 })
   createdAt: Date;
+
+  @OneToMany(() => SaleItem, (item) => item.sale)
+  items: SaleItem[];
 }

@@ -169,4 +169,25 @@ export class AuthService {
       throw new BadRequestException('Login failed');
     }
   }
+
+  async verifyPassword(userId: string, password: string) {
+    const user = await this.userRepository.createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return {
+      success: true,
+      message: 'Password verified',
+    };
+  }
 }
