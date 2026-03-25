@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Modern Auth System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #666; /* gray text */
+        }
+
+        .container {
+            background: white; /* main container white */
+            border-radius: 6px;
+            box-shadow: none; /* removed panel shadow */
+            overflow: hidden;
+            width: 100%;
+            max-width: 420px; /* normal desktop size */
+            animation: slideUp 0.5s ease;
+            margin: 10px;
+            color: #666; /* gray text inside */
+            position: relative; /* needed for overlay positioning */
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: white; /* remove colored header panel */
+            color: #666; /* gray text */
+            padding: 20px 24px; /* more compact */
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 24px;
+            position: relative;
+            padding-top: 56px; /* reserve space for alerts */
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            position: fixed;
+            top: 12px;
+            left: 8px;
+            right: 8px;
+            max-width: calc(100% - 16px);
+            margin: 0 auto;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .loader {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.35);
+            z-index: 9998;
+            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px);
+        }
+
+        .loader.active {
+            display: flex;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            /* Mobile layout: keep form visible and full-width; Oppo A31 will be handled by JS */
+            .container { max-width: 100%; border-radius: 0; box-shadow: none; padding: 0; margin: 0; }
+            .form-container { display: block; padding: 16px; }
+            .container { margin-bottom: 20px; }
+        }
+
+        /* Android panel class (JS will add on Android devices except Oppo A31) */
+        .android-panel {
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            background: white;
+        }
+
+        /* Make sure form is comfortably sized on larger screens */
+        @media (min-width: 769px) {
+            .container { max-width: 380px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.15); margin-bottom: 24px; }
+            .form-container { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root" style="visibility:hidden">
+        <div class="container">
+        <div class="header">
+            <h1>Welcome Back</h1>
+            <p>Login to access your account</p>
+        </div>
+        <div class="form-container">
+            <div id="alert" class="alert" style="display:none"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                <div class="forgot-password">
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+                <div class="loader" id="loader" style="display:none">
+                    <div class="spinner"></div>
+                </div>
+                <div class="register-link">
+                    Don't have an account? <a href="register.html">Register here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const alertDiv = document.getElementById('alert');
+        const loader = document.getElementById('loader');
+        const loginBtn = document.querySelector('.btn-login');
+
+        // Ensure overlays/buttons are reset on initial load to avoid brief flash on very small screens
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (loader) hideLoader();
+                if (alertDiv) alertDiv.className = 'alert';
+                document.body.style.overflow = '';
+                if (loginBtn) loginBtn.disabled = false;
+            } catch (e) { /* ignore */ }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('Please enter a valid email address', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            showLoader();
+            hideAlert();
+
+            try {
+                // disable button to avoid duplicate submissions and visual glitches
+                if (loginBtn) loginBtn.disabled = true;
+
+                const response = await fetch('http://localhost:3000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    
+                    showAlert('Login successful! Redirecting to dashboard...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    showAlert(data.message || 'Invalid email or password', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error. Please make sure the server is running.', 'error');
+            } finally {
+                hideLoader();
+                document.body.style.overflow = '';
+                if (loginBtn) loginBtn.disabled = false;
+            }
+        });
+
+        function showAlert(message, type) {
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+            alertDiv.style.display = 'block';
+            // hide automatically after 3s
+            setTimeout(() => { hideAlert(); }, 3000);
+        }
+
+        function hideAlert() {
+            alertDiv.className = 'alert';
+            alertDiv.style.display = 'none';
+        }
+
+        function showLoader() {
+            if (!loader) return;
+            loader.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideLoader() {
+            if (!loader) return;
+            loader.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // Detect Oppo A31 (or small OPPO devices) and apply Android panel otherwise
+        (function(){
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            const isOppoA31 = /oppo/i.test(ua) && /a31/i.test(ua);
+            const isSmallOppo = /oppo/i.test(ua) && window.innerWidth <= 480;
+            const isAndroid = /android/i.test(ua);
+            const appRoot = document.getElementById('app-root');
+            let container = appRoot ? appRoot.querySelector('.container') : document.querySelector('.container');
+
+            if ((isOppoA31 || isSmallOppo) && container && appRoot) {
+                // Move the container node out of the app-root without destroying the script
+                document.body.insertBefore(container, appRoot);
+                // Remove the empty app-root wrapper
+                appRoot.remove();
+
+                document.body.style.padding = '8px';
+                const header = container.querySelector('.header');
+                if (header) header.style.padding = '16px';
+                const formContainer = container.querySelector('.form-container');
+                if (formContainer) formContainer.style.padding = '12px';
+
+                // ensure the container is visible (we hid app-root initially)
+                container.style.visibility = 'visible';
+            } else if (isAndroid && container) {
+                // On Android devices (except Oppo A31), show panel with shadow
+                container.classList.add('android-panel');
+                const header = container.querySelector('.header');
+                if (header) header.style.padding = '16px';
+            } else if (container) {
+                // Desktop: keep neutral appearance
+                container.style.boxShadow = 'none';
+            }
+        })();
+
+        // Reveal app after JS adjustments to avoid flashes
+        document.addEventListener('DOMContentLoaded', () => {
+            const appRoot = document.getElementById('app-root');
+            if (appRoot) appRoot.style.visibility = 'visible';
+        });
+    </script>
+</body>
+</html>

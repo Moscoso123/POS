@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Register - Modern Auth System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #48bb78;
+            border-color: #48bb78;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .step.active .step-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .form-container {
+            padding: 30px;
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        .form-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .form-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .form-container::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .form-step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .form-step.active-step {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input.error {
+            border-color: #f56565;
+            background-color: #fff5f5;
+        }
+
+        input.success {
+            border-color: #48bb78;
+            background-color: #f0fff4;
+        }
+
+        /* Profile Picture Styles */
+        .profile-section {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .profile-pic-container {
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .profile-pic-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #667eea;
+            background: #f0f0f0;
+        }
+
+        .profile-pic-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .profile-pic-placeholder span {
+            font-size: 40px;
+            color: white;
+        }
+
+        .upload-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+
+        #profilePicInput {
+            display: none;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .preview-text {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .country-code {
+            width: 80px;
+            background: #f5f5f5;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .phone-number {
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-prev {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-prev:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-next, .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next:hover, .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            color: #f56565;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .profile-section {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .container {
+                max-width: 100%;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Create Account</h1>
+            <p>Join us today and start your journey</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="steps">
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Profile</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Contact</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Business</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Security</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <div id="alert" class="alert"></div>
+            <form id="registerForm" enctype="multipart/form-data">
+                <!-- Step 1: Profile Picture and Name -->
+                <div class="form-step active-step" id="step1Form">
+                    <div class="profile-section">
+                        <div class="profile-pic-container">
+                            <div class="profile-pic-wrapper">
+                                <div id="profilePicPreview" class="profile-pic-placeholder">
+                                    <span>📷</span>
+                                </div>
+                                <label for="profilePicInput" class="upload-btn">📸</label>
+                            </div>
+                            <input type="file" id="profilePicInput" accept="image/jpeg, image/png, image/jpg">
+                            <div class="preview-text" id="fileName"></div>
+                            <div class="hint">Click camera to upload (Optional)</div>
+                        </div>
+                        
+                        <div class="profile-info">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="name" placeholder="Juan Dela Cruz">
+                                <div class="error-message" id="nameError">Please enter your full name</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Contact Information -->
+                <div class="form-step" id="step2Form">
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="email" placeholder="juan@example.com">
+                        <div class="error-message" id="emailError">Please enter a valid email address</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <div class="phone-input-group">
+                            <input type="text" class="country-code" value="+63" readonly>
+                            <input type="tel" id="phoneNumber" class="phone-number" placeholder="9123456789">
+                        </div>
+                        <div class="hint">Enter your 10-digit mobile number (e.g., 9123456789)</div>
+                        <div class="error-message" id="phoneError">Please enter a valid Philippine mobile number</div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Business Information -->
+                <div class="form-step" id="step3Form">
+                    <div class="form-group">
+                        <label>Business Name *</label>
+                        <input type="text" id="businessName" placeholder="Enter your business name">
+                        <div class="error-message" id="businessError">Please enter your business name</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>User Type *</label>
+                        <select id="userType">
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 4: Security -->
+                <div class="form-step" id="step4Form">
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="password" placeholder="Create a password (min 6 characters)">
+                        <div class="error-message" id="passwordError">Password must be at least 6 characters</div>
+                        <div class="hint">Password must be at least 6 characters long</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm Password *</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password">
+                        <div class="error-message" id="confirmError">Passwords do not match</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-prev" id="prevBtn" style="display: none;">Previous</button>
+                    <button type="button" class="btn btn-next" id="nextBtn">Next</button>
+                    <button type="submit" class="btn btn-submit" id="submitBtn" style="display: none;">Register</button>
+                </div>
+            </form>
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+            </div>
+            <div class="login-link">
+                Already have an account? <a href="login.html">Login here</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let selectedFile = null;
+
+        // DOM Elements
+        const step1Form = document.getElementById('step1Form');
+        const step2Form = document.getElementById('step2Form');
+        const step3Form = document.getElementById('step3Form');
+        const step4Form = document.getElementById('step4Form');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const alertDiv = document.getElementById('alert');
+        const loader = document.getElementById('loader');
+
+        // Input elements
+        const profilePicInput = document.getElementById('profilePicInput');
+        const profilePicPreview = document.getElementById('profilePicPreview');
+        const fileName = document.getElementById('fileName');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phoneNumber');
+        const businessNameInput = document.getElementById('businessName');
+        const userTypeSelect = document.getElementById('userType');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+        // Error elements
+        const nameError = document.getElementById('nameError');
+        const emailError = document.getElementById('emailError');
+        const phoneError = document.getElementById('phoneError');
+        const businessError = document.getElementById('businessError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmError = document.getElementById('confirmError');
+
+        // Profile Picture Upload Handler
+        profilePicInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showAlert('File size must be less than 5MB', 'error');
+                    setTimeout(() => hideAlert(), 3000);
+                    return;
+                }
+
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!allowedTypes.includes(file.type)) {
+                    showAlert('Only JPG, JPEG, and PNG files are allowed', 'error');
+                    setTimeout(() => hideAlert(), 3000);
+                    return;
+                }
+
+                selectedFile = file;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    profilePicPreview.innerHTML = `<img src="${event.target.result}" class="profile-pic" alt="Profile Picture">`;
+                    fileName.textContent = `Selected: ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Philippine phone validation
+        function validatePhilippinePhone(phone) {
+            let cleanPhone = phone.replace(/\D/g, '');
+            
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = cleanPhone.substring(1);
+            }
+            
+            if (cleanPhone.startsWith('63')) {
+                cleanPhone = cleanPhone.substring(2);
+            }
+            
+            const mobileRegex = /^9\d{9}$/;
+            
+            if (mobileRegex.test(cleanPhone)) {
+                return { valid: true, cleanNumber: cleanPhone };
+            } else {
+                return { valid: false, cleanNumber: null };
+            }
+        }
+
+        // Validation functions
+        function validateStep1() {
+            let isValid = true;
+            const name = nameInput.value.trim();
+            
+            if (!name || name.length < 2) {
+                nameError.classList.add('show');
+                nameInput.classList.add('error');
+                isValid = false;
+            } else {
+                nameError.classList.remove('show');
+                nameInput.classList.remove('error');
+                nameInput.classList.add('success');
+            }
+            return isValid;
+        }
+
+        function validateStep2() {
+            let isValid = true;
+            const email = emailInput.value.trim();
+            const phone = phoneInput.value.trim();
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                emailError.classList.add('show');
+                emailInput.classList.add('error');
+                isValid = false;
+            } else {
+                emailError.classList.remove('show');
+                emailInput.classList.remove('error');
+                emailInput.classList.add('success');
+            }
+            
+            if (!phone) {
+                phoneError.classList.add('show');
+                phoneInput.classList.add('error');
+                isValid = false;
+            } else {
+                const phoneValidation = validatePhilippinePhone(phone);
+                if (!phoneValidation.valid) {
+                    phoneError.classList.add('show');
+                    phoneInput.classList.add('error');
+                    isValid = false;
+                } else {
+                    phoneError.classList.remove('show');
+                    phoneInput.classList.remove('error');
+                    phoneInput.classList.add('success');
+                }
+            }
+            return isValid;
+        }
+
+        function validateStep3() {
+            let isValid = true;
+            const businessName = businessNameInput.value.trim();
+            
+            if (!businessName || businessName.length < 2) {
+                businessError.classList.add('show');
+                businessNameInput.classList.add('error');
+                isValid = false;
+            } else {
+                businessError.classList.remove('show');
+                businessNameInput.classList.remove('error');
+                businessNameInput.classList.add('success');
+            }
+            return isValid;
+        }
+
+        function validateStep4() {
+            let isValid = true;
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (!password || password.length < 6) {
+                passwordError.classList.add('show');
+                passwordInput.classList.add('error');
+                isValid = false;
+            } else {
+                passwordError.classList.remove('show');
+                passwordInput.classList.remove('error');
+                passwordInput.classList.add('success');
+            }
+            
+            if (password !== confirmPassword) {
+                confirmError.classList.add('show');
+                confirmPasswordInput.classList.add('error');
+                isValid = false;
+            } else {
+                confirmError.classList.remove('show');
+                confirmPasswordInput.classList.remove('error');
+                confirmPasswordInput.classList.add('success');
+            }
+            return isValid;
+        }
+
+        // Update step visibility
+        function updateStep() {
+            step1Form.classList.remove('active-step');
+            step2Form.classList.remove('active-step');
+            step3Form.classList.remove('active-step');
+            step4Form.classList.remove('active-step');
+
+            if (currentStep === 1) {
+                step1Form.classList.add('active-step');
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            } else if (currentStep === 2) {
+                step2Form.classList.add('active-step');
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            } else if (currentStep === 3) {
+                step3Form.classList.add('active-step');
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            } else if (currentStep === 4) {
+                step4Form.classList.add('active-step');
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            }
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'completed');
+                
+                if (i === currentStep) {
+                    step.classList.add('active');
+                } else if (i < currentStep) {
+                    step.classList.add('completed');
+                }
+            }
+        }
+
+        // Next button
+        nextBtn.addEventListener('click', () => {
+            let isValid = false;
+            
+            if (currentStep === 1) isValid = validateStep1();
+            else if (currentStep === 2) isValid = validateStep2();
+            else if (currentStep === 3) isValid = validateStep3();
+
+            if (isValid) {
+                currentStep++;
+                updateStep();
+            } else {
+                showAlert('Please fill in all required fields correctly', 'error');
+                setTimeout(() => hideAlert(), 3000);
+            }
+        });
+
+        // Previous button
+        prevBtn.addEventListener('click', () => {
+            currentStep--;
+            updateStep();
+        });
+
+        // Alert functions
+        function showAlert(message, type) {
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+        }
+
+        function hideAlert() {
+            alertDiv.className = 'alert';
+        }
+
+        // Loader functions
+        function showLoader() {
+            loader.classList.add('active');
+        }
+
+        function hideLoader() {
+            loader.classList.remove('active');
+        }
+
+        // Form submission
+        const form = document.getElementById('registerForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateStep4()) {
+                showAlert('Please check your password', 'error');
+                setTimeout(() => hideAlert(), 3000);
+                return;
+            }
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            let phone = phoneInput.value.trim();
+            const businessName = businessNameInput.value.trim();
+            const userType = userTypeSelect.value;
+            const password = passwordInput.value;
+
+            const phoneValidation = validatePhilippinePhone(phone);
+            const formattedPhone = `+63${phoneValidation.cleanNumber}`;
+
+            const submitData = new FormData();
+            submitData.append('name', name);
+            submitData.append('email', email);
+            submitData.append('phoneNumber', formattedPhone);
+            submitData.append('businessName', businessName);
+            submitData.append('userType', userType);
+            submitData.append('password', password);
+            
+            if (selectedFile) {
+                submitData.append('profilePic', selectedFile);
+            }
+
+            showLoader();
+            hideAlert();
+
+            try {
+                submitBtn.disabled = true;
+                const response = await fetch('http://localhost:3000/auth/register', {
+                    method: 'POST',
+                    body: submitData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showAlert(data.message || 'Registration failed', 'error');
+                    setTimeout(() => hideAlert(), 3000);
+                }
+            } catch (error) {
+                showAlert('Network error. Please make sure the server is running.', 'error');
+                setTimeout(() => hideAlert(), 3000);
+            } finally {
+                hideLoader();
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Real-time validation
+        phoneInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/\D/g, '');
+            if (value.startsWith('0')) value = value.substring(1);
+            if (value.startsWith('63')) value = value.substring(2);
+            if (value.length > 10) value = value.slice(0, 10);
+            this.value = value;
+        });
+
+        nameInput.addEventListener('input', () => {
+            if (nameInput.value.trim().length >= 2) {
+                nameInput.classList.add('success');
+                nameInput.classList.remove('error');
+                nameError.classList.remove('show');
+            }
+        });
+
+        emailInput.addEventListener('input', () => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(emailInput.value)) {
+                emailInput.classList.add('success');
+                emailInput.classList.remove('error');
+                emailError.classList.remove('show');
+            }
+        });
+
+        businessNameInput.addEventListener('input', () => {
+            if (businessNameInput.value.trim().length >= 2) {
+                businessNameInput.classList.add('success');
+                businessNameInput.classList.remove('error');
+                businessError.classList.remove('show');
+            }
+        });
+
+        passwordInput.addEventListener('input', () => {
+            if (passwordInput.value.length >= 6) {
+                passwordInput.classList.add('success');
+                passwordInput.classList.remove('error');
+                passwordError.classList.remove('show');
+            }
+            if (confirmPasswordInput.value && passwordInput.value === confirmPasswordInput.value) {
+                confirmPasswordInput.classList.add('success');
+                confirmPasswordInput.classList.remove('error');
+                confirmError.classList.remove('show');
+            }
+        });
+
+        confirmPasswordInput.addEventListener('input', () => {
+            if (confirmPasswordInput.value === passwordInput.value && passwordInput.value.length >= 6) {
+                confirmPasswordInput.classList.add('success');
+                confirmPasswordInput.classList.remove('error');
+                confirmError.classList.remove('show');
+            } else if (confirmPasswordInput.value) {
+                confirmPasswordInput.classList.remove('success');
+                confirmPasswordInput.classList.add('error');
+                confirmError.classList.add('show');
+            }
+        });
+
+        // Initialize
+        updateStep();
+    </script>
+</body>
+</html>
