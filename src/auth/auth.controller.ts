@@ -16,7 +16,7 @@ export class AuthController {
   @Post('register')
   @UseInterceptors(FileInterceptor('profilePic', {
     storage: diskStorage({
-      destination: './uploads/profiles', // Folder where images will be stored
+      destination: './uploads/profiles',
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = extname(file.originalname);
@@ -47,7 +47,21 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto);
+    // Auto check-in for staff on login
+    if (result?.data?.user?.id) {
+      try {
+        await this.authService.checkInOnLogin(result.data.user.id);
+      } catch { /* non-blocking */ }
+    }
+    return result;
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Request() req) {
+    return this.authService.checkOutOnLogout(req.user.userId);
   }
 
   @Post('verify-password')

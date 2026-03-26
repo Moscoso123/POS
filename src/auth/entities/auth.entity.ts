@@ -13,7 +13,7 @@ import * as bcrypt from 'bcrypt';
 export enum UserType {
   ADMIN = 'admin',
   STAFF = 'staff'
-}
+} 
 
 @Entity('users')
 export class User {

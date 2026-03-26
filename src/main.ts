@@ -4,6 +4,65 @@ import { join } from 'path';
 import * as express from 'express';
 import * as os from 'os';
 import { Logger } from '@nestjs/common';
+import { spawn } from 'child_process';
+import { existsSync } from 'fs';
+
+function startCloudflaredTunnel(port: number, logger: Logger): void {
+  const cloudflaredPath = join(__dirname, '..', 'cloudflared.exe');
+
+  if (!existsSync(cloudflaredPath)) {
+    logger.warn('⚠️  cloudflared.exe not found — skipping tunnel');
+    logger.warn(`   Expected at: ${cloudflaredPath}`);
+    return;
+  }
+
+  const tunnel = spawn(cloudflaredPath, ['tunnel', '--url', `http://localhost:${port}`], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  let urlFound = false;
+
+  const handleOutput = (data: Buffer) => {
+    const text = data.toString();
+    if (!urlFound) {
+      const match = text.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
+      if (match) {
+        urlFound = true;
+        const onlineUrl = match[0];
+        logger.log('');
+        logger.log('═══════════════════════════════════════════════════════════');
+        logger.log('🌐 CLOUDFLARE TUNNEL ACTIVE');
+        logger.log('═══════════════════════════════════════════════════════════');
+        logger.log(`   🔗 Online URL: ${onlineUrl}`);
+        logger.log('');
+        logger.log('   Share this link — anyone can access your POS system!');
+        logger.log('═══════════════════════════════════════════════════════════');
+      }
+    }
+  };
+
+  tunnel.stdout.on('data', handleOutput);
+  tunnel.stderr.on('data', handleOutput);
+
+  tunnel.on('error', (err) => {
+    logger.error(`❌ Cloudflare tunnel error: ${err.message}`);
+  });
+
+  tunnel.on('close', (code) => {
+    if (code !== 0 && code !== null) {
+      logger.warn(`⚠️  Cloudflare tunnel exited with code ${code}`);
+    }
+  });
+
+  process.on('SIGINT', () => {
+    tunnel.kill();
+    process.exit();
+  });
+  process.on('SIGTERM', () => {
+    tunnel.kill();
+    process.exit();
+  });
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,11 +71,7 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors();
 
-  // Set global prefix for API routes (optional but recommended)
-  // app.setGlobalPrefix('api'); // Uncomment if you want /api/attendance
-
   // IMPORTANT: Serve static files AFTER setting up routes
-  // But better to use a different path for static files
   app.use('/', express.static(join(__dirname, '..', 'public')));
   
   // Serve uploads folder if exists
@@ -28,28 +83,27 @@ async function bootstrap() {
 
   // Get local network IPs
   const nets = os.networkInterfaces();
+  logger.log('');
   logger.log('═══════════════════════════════════════════════════════════');
-  logger.log('✅ Server running on:');
-  logger.log(`   • Local:       http://localhost:${port}`);
+  logger.log('🚀 BluePOS SERVER READY');
+  logger.log('═══════════════════════════════════════════════════════════');
+  logger.log(`   📍 Local:     http://localhost:${port}`);
   
   for (const name of Object.keys(nets)) {
     const netInterfaces = nets[name];
     if (netInterfaces && Array.isArray(netInterfaces)) {
       for (const net of netInterfaces) {
-        // Only IPv4 and non-internal addresses
         if (net.family === 'IPv4' && !net.internal) {
-          logger.log(`   • Network:     http://${net.address}:${port}`);
+          logger.log(`   📍 Network:   http://${net.address}:${port}`);
         }
       }
     }
   }
   
-  logger.log(`📱 Frontend login page:`);
-  logger.log(`   • http://localhost:${port}/login.html`);
-  logger.log(`🔍 API health endpoint:`);
-  logger.log(`   • http://localhost:${port}/health`);
   logger.log('═══════════════════════════════════════════════════════════');
-  logger.log(`✨ Server is ready to accept connections from your local network`);
-  logger.log(`💡 Share the Network URL with other devices on the same network`);
+  logger.log('   Starting Cloudflare tunnel...');
+
+  // Auto-start Cloudflare tunnel
+  startCloudflaredTunnel(+port, logger);
 }
 bootstrap();

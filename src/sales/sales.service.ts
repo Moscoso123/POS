@@ -57,6 +57,7 @@ export class SalesService {
 
   async findAll(page: number = 1, limit: number = 10): Promise<{ data: Sale[]; total: number }> {
     const [data, total] = await this.saleRepository.findAndCount({
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -66,6 +67,7 @@ export class SalesService {
 
   async findOne(id: string): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
+      relations: ['user'],
       where: { id },
     });
     if (!sale) {
@@ -105,6 +107,7 @@ export class SalesService {
     const todayRevenue = todaySales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
 
     const recentSales = await this.saleRepository.find({
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       take: 10,
     });
@@ -117,5 +120,56 @@ export class SalesService {
       todayRevenue,
       recentSales,
     };
+  }
+
+  async getDailyRevenue(days: number = 14): Promise<any[]> {
+    const since = new Date();
+    since.setDate(since.getDate() - days + 1);
+    since.setHours(0, 0, 0, 0);
+
+    const results = await this.saleRepository
+      .createQueryBuilder('sale')
+      .select('DATE(sale.createdAt)', 'date')
+      .addSelect('SUM(sale.total_amount)', 'revenue')
+      .addSelect('COUNT(sale.id)', 'count')
+      .where('sale.createdAt >= :since', { since })
+      .groupBy('DATE(sale.createdAt)')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    // Fill missing days with 0
+    const map = new Map(results.map(r => [r.date, r]));
+    const filled: any[] = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(since);
+      d.setDate(d.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      const entry = map.get(key);
+      filled.push({
+        date: key,
+        revenue: entry ? Number(entry.revenue) : 0,
+        count: entry ? Number(entry.count) : 0,
+      });
+    }
+    return filled;
+  }
+
+  async getTopStaff(limit: number = 5): Promise<any[]> {
+    const results = await this.saleRepository
+      .createQueryBuilder('sale')
+      .leftJoin('sale.user', 'user')
+      .select('sale.user_id', 'userId')
+      .addSelect('user.name', 'name')
+      .addSelect('user.profilePic', 'profilePic')
+      .addSelect('COUNT(sale.id)', 'totalTransactions')
+      .addSelect('SUM(sale.total_amount)', 'totalRevenue')
+      .groupBy('sale.user_id')
+      .addGroupBy('user.name')
+      .addGroupBy('user.profilePic')
+      .orderBy('totalRevenue', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return results;
   }
 }

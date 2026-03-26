@@ -25,6 +25,16 @@ export class SalesController {
     return this.salesService.getSalesStats(start, end);
   }
 
+  @Get('top-staff')
+  getTopStaff(@Query('limit') limit = 5) {
+    return this.salesService.getTopStaff(+limit);
+  }
+
+  @Get('daily-revenue')
+  getDailyRevenue(@Query('days') days = 14) {
+    return this.salesService.getDailyRevenue(+days);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.salesService.findOne(id);

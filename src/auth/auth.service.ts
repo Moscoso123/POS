@@ -1,19 +1,22 @@
 // src/auth/auth.service.ts
 import { Injectable, ConflictException, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/auth.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { StaffAttendance } from '../staff/entities/staff-attendance.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(StaffAttendance)
+    private attendanceRepository: Repository<StaffAttendance>,
     private jwtService: JwtService,
   ) {}
 
@@ -62,7 +65,7 @@ export class AuthService {
       user.userType = registerDto.userType;
       // Let the entity lifecycle hook hash the password to avoid double-hashing
       user.password = registerDto.password;
-      user.profilePic = null;
+      user.profilePic = registerDto.profilePic ?? null;
 
       // Save user
       const savedUser = await this.userRepository.save(user);
@@ -169,6 +172,56 @@ export class AuthService {
       logger.error('Login failed unexpectedly', error as any);
       throw new BadRequestException('Login failed');
     }
+  }
+
+  async checkInOnLogin(userId: string) {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const existing = await this.attendanceRepository.findOne({
+      where: {
+        userId,
+        date: Between(todayStart, todayEnd),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (existing && existing.checkIn && !existing.checkOut) {
+      return;
+    }
+
+    const attendance = new StaffAttendance();
+    attendance.userId = userId;
+    attendance.date = now;
+    attendance.checkIn = now.toTimeString().slice(0, 8);
+    attendance.status = 'present';
+    await this.attendanceRepository.save(attendance);
+  }
+
+  async checkOutOnLogout(userId: string) {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const existing = await this.attendanceRepository.findOne({
+      where: {
+        userId,
+        date: Between(todayStart, todayEnd),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (existing && existing.checkIn && !existing.checkOut) {
+      existing.checkOut = now.toTimeString().slice(0, 8);
+      await this.attendanceRepository.save(existing);
+    }
+
+    return { success: true, message: 'Logged out successfully' };
   }
 
   async verifyPassword(userId: string, password: string) {

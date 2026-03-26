@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { StaffAttendance } from './entities/staff-attendance.entity';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { User, UserType } from '../auth/entities/auth.entity';
@@ -35,7 +35,7 @@ export class StaffService {
 
   async getStaffList(): Promise<Partial<User>[]> {
     const staff = await this.userRepository.find({
-      where: { userType: UserType.STAFF },
+      where: { userType: In([UserType.STAFF, UserType.ADMIN]) },
       order: { createdAt: 'DESC' },
     });
 

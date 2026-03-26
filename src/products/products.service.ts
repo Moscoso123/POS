@@ -16,8 +16,10 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto, userId: string): Promise<Product> {
+    const sku = createProductDto.sku || `SKU-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const product = this.productRepository.create({
       ...createProductDto,
+      sku,
       stock_quantity: createProductDto.stock_quantity || 0,
       min_stock_level: createProductDto.min_stock_level || 5,
     });
@@ -26,14 +28,17 @@ export class ProductsService {
   }
 
   async findAll(): Promise<Product[]> {
-    return this.productRepository.find({ where: { is_active: true } });
+    return this.productRepository
+      .createQueryBuilder('product')
+      .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+      .getMany();
   }
 
   async findAllWithLowStock(): Promise<Product[]> {
     return this.productRepository
       .createQueryBuilder('product')
       .where('product.stock_quantity <= product.min_stock_level')
-      .andWhere('product.is_active = :isActive', { isActive: true })
+      .andWhere('(product.is_active = :isActive OR product.is_active IS NULL)', { isActive: true })
       .getMany();
   }
 
@@ -192,18 +197,21 @@ export class ProductsService {
   }
 
   async getDashboardStats(): Promise<any> {
-    const totalProducts = await this.productRepository.count({ where: { is_active: true } });
+    const totalProducts = await this.productRepository
+      .createQueryBuilder('product')
+      .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+      .getCount();
     
     const lowStockCount = await this.productRepository
       .createQueryBuilder('product')
       .where('product.stock_quantity <= product.min_stock_level')
-      .andWhere('product.is_active = :isActive', { isActive: true })
+      .andWhere('(product.is_active = :isActive OR product.is_active IS NULL)', { isActive: true })
       .getCount();
 
     const totalStockValue = await this.productRepository
       .createQueryBuilder('product')
       .select('SUM(product.stock_quantity * product.cost_price)', 'total')
-      .where('product.is_active = :isActive', { isActive: true })
+      .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
       .getRawOne();
 
     return {

@@ -1,8 +1,9 @@
 import { IsString, IsNumber, IsOptional, IsBoolean, Min } from 'class-validator';
 
 export class CreateProductDto {
+  @IsOptional()
   @IsString()
-  sku: string;
+  sku?: string;
 
   @IsString()
   name: string;
