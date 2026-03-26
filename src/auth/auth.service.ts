@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/auth.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -188,6 +189,80 @@ export class AuthService {
     return {
       success: true,
       message: 'Password verified',
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        businessName: user.businessName,
+        name: user.name,
+        userType: user.userType,
+        profilePic: user.profilePic,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.userRepository.createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // If changing password, verify old password first
+    if (dto.newPassword) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Current password is required to set a new password');
+      }
+      const ok = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!ok) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+      user.password = dto.newPassword; // entity hook will hash it
+    }
+
+    if (dto.name) user.name = dto.name;
+    if (dto.businessName) user.businessName = dto.businessName;
+    if (dto.profilePic !== undefined) user.profilePic = dto.profilePic;
+
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.userRepository.findOne({ where: { email: dto.email } });
+      if (existing) {
+        throw new ConflictException('Email already in use');
+      }
+      user.email = dto.email;
+    }
+
+    const saved = await this.userRepository.save(user);
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: saved.id,
+        email: saved.email,
+        phoneNumber: saved.phoneNumber,
+        businessName: saved.businessName,
+        name: saved.name,
+        userType: saved.userType,
+        profilePic: saved.profilePic,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+      },
     };
   }
 }
