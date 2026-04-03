@@ -7,6 +7,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyPasswordDto } from './dto/verify-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { VerifyResetCodeDto } from './dto/verify-reset-code.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -24,8 +25,14 @@ export class AuthController {
       }
     }),
     fileFilter: (req, file, callback) => {
-      if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
+      // 🔐 Security: Validate MIME type
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedMimes.includes(file.mimetype)) {
+        return callback(new Error('Invalid file type. Only JPEG, PNG, GIF allowed'), false);
+      }
+      // 🔐 Security: Validate extension
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        return callback(new Error('Invalid file extension'), false);
       }
       callback(null, true);
     },
@@ -105,5 +112,44 @@ export class AuthController {
       dto.profilePic = `/uploads/profiles/${file.filename}`;
     }
     return this.authService.updateProfile(req.user.userId, dto);
+  }
+
+  @Post('password-reset/send-code')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendPasswordResetCode(@Request() req) {
+    return this.authService.sendPasswordResetCode(req.user.userId);
+  }
+
+  @Post('password-reset/verify-code')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async verifyPasswordResetCode(@Request() req, @Body() dto: VerifyResetCodeDto) {
+    return this.authService.verifyPasswordResetCode(req.user.userId, dto.code);
+  }
+
+  @Post('password-reset/reset')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Request() req, @Body() dto: { newPassword: string }) {
+    return this.authService.resetAuthenticatedUserPassword(req.user.userId, dto.newPassword);
+  }
+
+  @Post('forgot-password/send-code')
+  @HttpCode(HttpStatus.OK)
+  async sendForgotPasswordCode(@Body() dto: { email: string }) {
+    return this.authService.sendForgotPasswordCode(dto.email);
+  }
+
+  @Post('forgot-password/verify-code')
+  @HttpCode(HttpStatus.OK)
+  async verifyForgotPasswordCode(@Body() dto: { email: string; code: string }) {
+    return this.authService.verifyForgotPasswordCode(dto.email, dto.code);
+  }
+
+  @Post('forgot-password/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetForgotPassword(@Body() dto: { email: string; code: string; newPassword: string }) {
+    return this.authService.resetForgotPassword(dto.email, dto.code, dto.newPassword);
   }
 }

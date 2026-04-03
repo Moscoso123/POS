@@ -39,25 +39,6 @@ export class StaffService {
       order: { createdAt: 'DESC' },
     });
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(todayStart);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    const todayAttendance = await this.attendanceRepository.find({
-      where: {
-        date: Between(todayStart, todayEnd),
-      },
-      order: { createdAt: 'DESC' },
-    });
-
-    const attendanceByUser = new Map<string, StaffAttendance>();
-    todayAttendance.forEach((attendance) => {
-      if (!attendanceByUser.has(attendance.userId)) {
-        attendanceByUser.set(attendance.userId, attendance);
-      }
-    });
-
     return staff.map((u) => ({
       id: u.id,
       name: u.name,
@@ -66,9 +47,9 @@ export class StaffService {
       businessName: u.businessName,
       userType: u.userType,
       createdAt: u.createdAt,
-      status: attendanceByUser.get(u.id)?.checkIn && !attendanceByUser.get(u.id)?.checkOut ? 'active' : 'inactive',
-      checkIn: attendanceByUser.get(u.id)?.checkIn || null,
-      checkOut: attendanceByUser.get(u.id)?.checkOut || null,
+      profilePic: u.profilePic,
+      updatedAt: u.updatedAt,
+      status: u.status || 'inactive',
     }));
   }
 
@@ -129,6 +110,21 @@ export class StaffService {
         userType: saved.userType,
         temporaryPassword: tempPassword,
       },
+    };
+  }
+
+  async updateStatus(userId: string, status: 'active' | 'inactive'): Promise<any> {
+    await this.userRepository.update(
+      { id: userId },
+      { 
+        status,
+        updatedAt: new Date()
+      }
+    );
+
+    return { 
+      success: true, 
+      message: 'Status updated successfully'
     };
   }
 }

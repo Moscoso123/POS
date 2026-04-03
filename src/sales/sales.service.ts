@@ -57,17 +57,34 @@ export class SalesService {
 
   async findAll(page: number = 1, limit: number = 10): Promise<{ data: Sale[]; total: number }> {
     const [data, total] = await this.saleRepository.findAndCount({
-      relations: ['user'],
+      relations: ['user', 'items', 'items.product'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
-    return { data, total };
+
+    // Ensure items are properly formatted
+    const formattedData = data.map(sale => {
+      return {
+        ...sale,
+        items: Array.isArray(sale.items) 
+          ? sale.items.map(item => ({
+              ...item,
+              productName: item.product?.name || 'Unknown Product',
+              quantity: Number(item.quantity) || 0,
+              unitPrice: Number(item.unitPrice) || 0,
+              subtotal: Number(item.subtotal) || 0,
+            }))
+          : [],
+      };
+    });
+
+    return { data: formattedData, total };
   }
 
   async findOne(id: string): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
-      relations: ['user'],
+      relations: ['user', 'items', 'items.product'],
       where: { id },
     });
     if (!sale) {
@@ -124,22 +141,27 @@ export class SalesService {
 
   async getDailyRevenue(days: number = 14): Promise<any[]> {
     const since = new Date();
-    since.setDate(since.getDate() - days + 1);
+    since.setDate(since.getDate() - (days - 1));
     since.setHours(0, 0, 0, 0);
+
+    const until = new Date();
+    until.setHours(23, 59, 59, 999);
 
     const results = await this.saleRepository
       .createQueryBuilder('sale')
       .select('DATE(sale.createdAt)', 'date')
       .addSelect('SUM(sale.total_amount)', 'revenue')
       .addSelect('COUNT(sale.id)', 'count')
-      .where('sale.createdAt >= :since', { since })
+      .where('sale.createdAt >= :since AND sale.createdAt <= :until', { since, until })
       .groupBy('DATE(sale.createdAt)')
       .orderBy('date', 'ASC')
       .getRawMany();
 
-    // Fill missing days with 0
+    // Fill missing days with 0, ensuring today is always included
     const map = new Map(results.map(r => [r.date, r]));
     const filled: any[] = [];
+    const today = new Date();
+    
     for (let i = 0; i < days; i++) {
       const d = new Date(since);
       d.setDate(d.getDate() + i);
@@ -151,6 +173,7 @@ export class SalesService {
         count: entry ? Number(entry.count) : 0,
       });
     }
+    
     return filled;
   }
 
@@ -171,5 +194,101 @@ export class SalesService {
       .getRawMany();
 
     return results;
+  }
+
+  async getSalesByCategory(): Promise<any[]> {
+    const results = await this.saleItemRepository
+      .createQueryBuilder('saleItem')
+      .leftJoin('saleItem.product', 'product')
+      .select('product.category', 'category')
+      .addSelect('SUM(saleItem.quantity)', 'totalQuantity')
+      .addSelect('SUM(saleItem.subtotal)', 'totalRevenue')
+      .addSelect('COUNT(DISTINCT saleItem.saleId)', 'totalTransactions')
+      .where('product.category IS NOT NULL AND product.category != :empty', { empty: '' })
+      .groupBy('product.category')
+      .orderBy('totalRevenue', 'DESC')
+      .getRawMany();
+
+    return results.map(r => ({
+      category: r.category || 'Uncategorized',
+      quantity: Number(r.totalQuantity) || 0,
+      revenue: Number(r.totalRevenue) || 0,
+      transactions: Number(r.totalTransactions) || 0,
+    }));
+  }
+
+  async getInventoryByCategory(): Promise<any[]> {
+    const Product = await this.productsService.findAll();
+    const categoryMap = new Map();
+
+    for (const product of Product) {
+      const category = product.category || 'Uncategorized';
+      const stockQty = Number(product.stock_quantity) || 0;
+
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, {
+          category,
+          totalStock: 0,
+          productCount: 0,
+        });
+      }
+
+      const stats = categoryMap.get(category);
+      stats.totalStock += stockQty;
+      stats.productCount += 1;
+    }
+
+    return Array.from(categoryMap.values()).sort((a, b) => b.totalStock - a.totalStock);
+  }
+
+  async getTopProducts(limit: number = 5): Promise<any[]> {
+    const results = await this.saleItemRepository
+      .createQueryBuilder('saleItem')
+      .leftJoin('saleItem.product', 'product')
+      .select('product.id', 'id')
+      .addSelect('product.name', 'name')
+      .addSelect('product.category', 'category')
+      .addSelect('product.price', 'price')
+      .addSelect('SUM(saleItem.quantity)', 'totalQuantity')
+      .addSelect('SUM(saleItem.subtotal)', 'totalRevenue')
+      .where('product.name IS NOT NULL')
+      .groupBy('product.id')
+      .addGroupBy('product.name')
+      .addGroupBy('product.category')
+      .addGroupBy('product.price')
+      .orderBy('totalQuantity', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return results.map(r => ({
+      id: r.id,
+      name: r.name || 'Unknown',
+      category: r.category || 'Uncategorized',
+      price: Number(r.price) || 0,
+      quantity: Number(r.totalQuantity) || 0,
+      revenue: Number(r.totalRevenue) || 0,
+    }));
+  }
+
+  async getTopCategories(limit: number = 5): Promise<any[]> {
+    const results = await this.saleItemRepository
+      .createQueryBuilder('saleItem')
+      .leftJoin('saleItem.product', 'product')
+      .select('product.category', 'category')
+      .addSelect('SUM(saleItem.quantity)', 'totalQuantity')
+      .addSelect('SUM(saleItem.subtotal)', 'totalRevenue')
+      .addSelect('COUNT(DISTINCT saleItem.saleId)', 'totalTransactions')
+      .where('product.category IS NOT NULL AND product.category != :empty', { empty: '' })
+      .groupBy('product.category')
+      .orderBy('totalQuantity', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return results.map(r => ({
+      category: r.category || 'Uncategorized',
+      quantity: Number(r.totalQuantity) || 0,
+      revenue: Number(r.totalRevenue) || 0,
+      transactions: Number(r.totalTransactions) || 0,
+    }));
   }
 }

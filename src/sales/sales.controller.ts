@@ -35,6 +35,26 @@ export class SalesController {
     return this.salesService.getDailyRevenue(+days);
   }
 
+  @Get('by-category')
+  getSalesByCategory() {
+    return this.salesService.getSalesByCategory();
+  }
+
+  @Get('inventory-by-category')
+  getInventoryByCategory() {
+    return this.salesService.getInventoryByCategory();
+  }
+
+  @Get('top-products')
+  getTopProducts(@Query('limit') limit = 5) {
+    return this.salesService.getTopProducts(+limit);
+  }
+
+  @Get('top-categories')
+  getTopCategories(@Query('limit') limit = 5) {
+    return this.salesService.getTopCategories(+limit);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.salesService.findOne(id);

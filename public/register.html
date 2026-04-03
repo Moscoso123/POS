@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Register - Modern Auth System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>:root {
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
@@ -200,10 +202,12 @@ body {
 
 .input-wrapper {
     position: relative;
+    width: 100%;
 }
 
 .input-field, .select-field {
     width: 100%;
+    min-width: auto;
     padding: 14px 40px 14px 14px;
     font-size: 14px;
     background: var(--bg-light);
@@ -311,6 +315,8 @@ body {
 
 .profile-info {
     flex: 1;
+    flex-shrink: 0;
+    min-width: 0;
 }
 
 .preview-text {
@@ -936,7 +942,7 @@ input.success, select.success {
     </div>
 
     <script>
-        const API_BASE_URL = window.location.origin;
+        const API_BASE_URL = window.location.origin + '/api';
         let currentStep = 1;
         const totalSteps = 4;
         let selectedFile = null;

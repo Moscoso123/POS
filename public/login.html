@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Login - Modern Auth System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
             --primary: #2563eb;
@@ -246,12 +248,14 @@
         }
 
         .alert.success {
+            display: block;
             background: linear-gradient(135deg, #d1fae5, #a7f3d0);
             color: #065f46;
             border-left: 4px solid var(--success);
         }
 
         .alert.error {
+            display: block;
             background: linear-gradient(135deg, #fee2e2, #fecaca);
             color: #991b1b;
             border-left: 4px solid var(--error);
@@ -399,7 +403,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = window.location.origin;
+        const API_BASE_URL = window.location.origin + '/api';
         const loginForm = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -453,6 +457,12 @@
             const email = emailInput.value.trim();
             const password = passwordInput.value;
             
+            // Log login attempt with credentials (for debugging)
+            console.log('=== Login Attempt ===');
+            console.log('Email:', email);
+            console.log('Password:', password);
+            console.log('====================');
+            
             // Validation
             if (!email || !password) {
                 showAlert('Please enter both email and password', 'error');
@@ -484,7 +494,23 @@
                     })
                 });
                 
-                const data = await response.json();
+                console.log(`📤 Login request sent to ${API_BASE_URL}/auth/login`);
+                console.log(`📥 Response status: ${response.status}`);
+                
+                let data;
+                const contentType = response.headers.get('content-type') || '';
+                console.log(`📋 Response content-type: ${contentType}`);
+                
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                    console.log(`✅ JSON parsed successfully:`, data);
+                } else {
+                    const text = await response.text();
+                    console.log(`⚠️ Non-JSON response received (${text.substring(0, 100)}...)`);
+                    console.error(`❌ Server returned ${contentType} instead of JSON`);
+                    showAlert('Server error: Invalid response format. Please contact support.', 'error');
+                    return;
+                }
                 
                 if (response.ok) {
                     // Store token in localStorage
@@ -493,6 +519,7 @@
                     if (token) {
                         localStorage.setItem('access_token', token);
                         localStorage.setItem('user', JSON.stringify(user || {}));
+                        console.log(`✅ Token saved to localStorage`);
                     }
                     
                     showAlert('Login successful! Redirecting...', 'success');
@@ -502,11 +529,18 @@
                         window.location.href = 'dashboard.html';
                     }, 1500);
                 } else {
-                    showAlert(data.message || 'Login failed. Please check your credentials.', 'error');
+                    console.error(`❌ Login failed with status ${response.status}:`, data);
+                    // Check if it's an authentication error (401) or invalid credentials
+                    if (response.status === 401 || response.status === 400) {
+                        showAlert('Invalid credentials. Please try again.', 'error');
+                    } else {
+                        showAlert(data.message || 'Login failed. Please try again.', 'error');
+                    }
                 }
             } catch (error) {
-                console.error('Login error:', error);
-                showAlert('Network error. Please make sure the server is running.', 'error');
+                console.error('❌ Login error:', error);
+                console.error('Error stack:', error?.stack);
+                showAlert('Network error. Please make sure the server is running at ' + API_BASE_URL, 'error');
             } finally {
                 hideLoader();
                 loginBtn.disabled = false;

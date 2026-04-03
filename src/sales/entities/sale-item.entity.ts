@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Sale } from './sales.entity';
+import { Product } from '../../products/entities/products.entity';
 
 @Entity('sale_items')
 export class SaleItem {
@@ -15,6 +16,10 @@ export class SaleItem {
 
   @Column({ name: 'product_id' })
   productId: string;
+
+  @ManyToOne(() => Product, { eager: false })
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 
   @Column()
   quantity: number;

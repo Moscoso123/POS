@@ -23,4 +23,9 @@ export class StaffController {
   inviteStaff(@Request() req, @Body() inviteDto: InviteStaffDto) {
     return this.staffService.inviteStaff(req.user.userId, inviteDto);
   }
+
+  @Post('update-status')
+  async updateStatus(@Request() req, @Body() { status }: { status: 'active' | 'inactive' }) {
+    return this.staffService.updateStatus(req.user.userId, status);
+  }
 }

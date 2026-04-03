@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>BluePOS | Modern Point of Sale System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
     <!-- Google Fonts & Material Icons + Chart.js -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
@@ -382,6 +384,134 @@
                 border-bottom: 1px solid var(--border);
             }
         }
+
+        /* ========= MODAL STYLES ========= */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-backdrop.show {
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(30px) scale(0.92);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-backdrop.show .modal-card {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-dark);
+        }
+
+        .modal-content {
+            padding: 24px;
+        }
+
+        .modal-field {
+            margin-bottom: 16px;
+        }
+
+        .modal-field label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        .modal-field input,
+        .modal-field select,
+        .modal-field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .modal-field input:focus,
+        .modal-field select:focus,
+        .modal-field textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .modal-actions {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-light);
+            border-color: var(--text-light);
+        }
     </style>
 </head>
 <body>
@@ -598,11 +728,15 @@
                     <h2 style="margin: 16px 0;">Blue Café POS</h2>
                     <p>📍 123 Commerce Ave, Downtown</p>
                     <p>📞 (555) 723-4567 | ✉️ pos@bluecafe.com</p>
-                    <div style="margin-top: 28px;"><button class="btn-primary" style="width: auto; padding: 10px 28px;">Edit Store Details</button></div>
+                    <div style="margin-top: 28px;"><button id="editStoreBtn" class="btn-primary" style="width: auto; padding: 10px 28px;">Edit Store Details</button></div>
                     <hr style="margin: 32px 0;" />
                     <div><strong>Tax Rate:</strong> 8.25% &nbsp;|&nbsp; <strong>Receipt Footer:</strong> Thank you!</div>
                 </div>
             `;
+            
+            document.getElementById('editStoreBtn')?.addEventListener('click', () => {
+                openModal('editStoreModal');
+            });
         }
         
         function renderInventory() {
@@ -619,9 +753,13 @@
                             <tr><td>Sandwich</td><td>FOOD-02</td><td>$6.90</td><td>22</td><td><span class="badge">In Stock</span></td></tr>
                         </tbody>
                     </table>
-                    <div style="padding: 20px;"><button class="btn-primary" style="width: auto;">➕ Add Product</button></div>
+                    <div style="padding: 20px;"><button id="addProductBtn" class="btn-primary" style="width: auto;">➕ Add Product</button></div>
                 </div>
             `;
+            
+            document.getElementById('addProductBtn')?.addEventListener('click', () => {
+                openModal('addProductModal');
+            });
         }
         
         function renderCounter() {
@@ -696,9 +834,13 @@
                         <div>👩‍🍳 Sofia Rodriguez — Barista / Cashier</div>
                         <div>🧑‍🔧 Michael Chen — Inventory Manager</div>
                     </div>
-                    <button class="btn-primary" style="width: auto;">➕ Add Staff Member</button>
+                    <button id="addStaffBtn" class="btn-primary" style="width: auto;">➕ Add Staff Member</button>
                 </div>
             `;
+            
+            document.getElementById('addStaffBtn')?.addEventListener('click', () => {
+                openModal('addStaffModal');
+            });
         }
         
         function renderReports() {
@@ -711,9 +853,13 @@
                 <div class="recent-sales" style="padding: 24px;">
                     <h3>📑 Sales Report (Last 30 Days)</h3>
                     <p style="margin: 12px 0;">Total Transactions: 1,284 | Net Sales: $29,540</p>
-                    <button class="btn-primary" style="width: auto; margin-top: 12px;">Download Full Report (PDF)</button>
+                    <button id="downloadReportBtn" class="btn-primary" style="width: auto; margin-top: 12px;">Download Full Report (PDF)</button>
                 </div>
             `;
+            
+            document.getElementById('downloadReportBtn')?.addEventListener('click', () => {
+                openModal('reportModal');
+            });
         }
         
         function renderSettings() {
@@ -722,13 +868,20 @@
                     <span class="material-symbols-outlined" style="font-size: 48px;">tune</span>
                     <h3>POS Configuration</h3>
                     <div style="text-align: left; max-width: 400px; margin: 24px auto;">
-                        <label style="display: flex; justify-content: space-between;"><span>Receipt Auto-print</span> <input type="checkbox" checked></label>
-                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Tax Inclusive Pricing</span> <input type="checkbox"></label>
-                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Low Stock Alert</span> <input type="checkbox" checked></label>
-                        <button class="btn-primary" style="margin-top: 32px;">Save Preferences</button>
+                        <label style="display: flex; justify-content: space-between;"><span>Receipt Auto-print</span> <input type="checkbox" id="autoprint" checked></label>
+                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Tax Inclusive Pricing</span> <input type="checkbox" id="taxIncl"></label>
+                        <label style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Low Stock Alert</span> <input type="checkbox" id="lowStockAlert" checked></label>
+                        <button id="savePrefsBtn" class="btn-primary" style="margin-top: 32px;">Save Preferences</button>
                     </div>
                 </div>
             `;
+            
+            document.getElementById('savePrefsBtn')?.addEventListener('click', () => {
+                const autoprint = document.getElementById('autoprint').checked;
+                const taxIncl = document.getElementById('taxIncl').checked;
+                const lowStockAlert = document.getElementById('lowStockAlert').checked;
+                alert(`✅ Settings saved!\n\nAuto-print: ${autoprint ? 'ON' : 'OFF'}\nTax Inclusive: ${taxIncl ? 'ON' : 'OFF'}\nLow Stock Alert: ${lowStockAlert ? 'ON' : 'OFF'}`);
+            });
         }
         
         // Navigation dispatcher
@@ -789,6 +942,226 @@
         // initial load
         bindNavEvents();
         navigateTo('dashboard');
+    </script>
+
+    <!-- MODALS -->
+    <div id="addProductModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Product</h3>
+                <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="modal-field">
+                    <label>Product Name</label>
+                    <input type="text" id="productName" placeholder="e.g., Espresso" />
+                </div>
+                <div class="modal-field">
+                    <label>Price</label>
+                    <input type="number" id="productPrice" placeholder="0.00" step="0.01" min="0" />
+                </div>
+                <div class="modal-field">
+                    <label>Category</label>
+                    <input type="text" id="productCategory" placeholder="e.g., Beverages" />
+                </div>
+                <div class="modal-field">
+                    <label>Stock Quantity</label>
+                    <input type="number" id="productStock" placeholder="0" min="0" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editStoreModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Store Details</h3>
+                <button class="modal-close" onclick="closeModal('editStoreModal')">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="modal-field">
+                    <label>Store Name</label>
+                    <input type="text" id="storeName" value="Blue Café POS" />
+                </div>
+                <div class="modal-field">
+                    <label>Address</label>
+                    <input type="text" id="storeAddress" value="123 Commerce Ave, Downtown" />
+                </div>
+                <div class="modal-field">
+                    <label>Phone</label>
+                    <input type="tel" id="storePhone" value="(555) 723-4567" />
+                </div>
+                <div class="modal-field">
+                    <label>Email</label>
+                    <input type="email" id="storeEmail" value="pos@bluecafe.com" />
+                </div>
+                <div class="modal-field">
+                    <label>Tax Rate (%)</label>
+                    <input type="number" id="storeTax" value="8.25" step="0.01" min="0" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('editStoreModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveStoreDetails()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addStaffModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Staff Member</h3>
+                <button class="modal-close" onclick="closeModal('addStaffModal')">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="modal-field">
+                    <label>Full Name</label>
+                    <input type="text" id="staffName" placeholder="John Doe" />
+                </div>
+                <div class="modal-field">
+                    <label>Email</label>
+                    <input type="email" id="staffEmail" placeholder="john@example.com" />
+                </div>
+                <div class="modal-field">
+                    <label>Role</label>
+                    <select id="staffRole">
+                        <option>Cashier</option>
+                        <option>Barista</option>
+                        <option>Manager</option>
+                        <option>Inventory Manager</option>
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label>Starting Date</label>
+                    <input type="date" id="staffDate" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('addStaffModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveStaffMember()">Add Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportModal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Download Report</h3>
+                <button class="modal-close" onclick="closeModal('reportModal')">&times;</button>
+            </div>
+            <div class="modal-content">
+                <p style="margin-bottom: 16px; color: var(--text-light);">Select report format:</p>
+                <div class="modal-field">
+                    <label style="display: flex; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="reportFormat" value="pdf" checked /> PDF Format
+                    </label>
+                </div>
+                <div class="modal-field">
+                    <label style="display: flex; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="reportFormat" value="csv" /> CSV Format
+                    </label>
+                </div>
+                <div class="modal-field">
+                    <label style="display: flex; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="reportFormat" value="excel" /> Excel Format
+                    </label>
+                </div>
+                <hr style="margin: 16px 0;">
+                <p style="color: var(--text-light); font-size: 13px;">Report contains: Sales data for last 30 days</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('reportModal')">Cancel</button>
+                <button class="btn-primary" onclick="downloadReport()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                // Trigger smooth transition
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        modal.classList.add('show');
+                    });
+                });
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                // Wait for transition to complete
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                }, 400);
+            }
+        }
+
+        // Close modal when clicking backdrop
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        function saveProduct() {
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('productPrice').value;
+            const category = document.getElementById('productCategory').value;
+            const stock = document.getElementById('productStock').value;
+            
+            if (!name || !price) {
+                alert('Please fill in Product Name and Price');
+                return;
+            }
+            
+            alert(`✅ Product Added!\n\nName: ${name}\nPrice: $${price}\nCategory: ${category || 'Uncategorized'}\nStock: ${stock}`);
+            closeModal('addProductModal');
+            document.getElementById('addProductModal').parentElement.querySelector('form')?.reset();
+        }
+
+        function saveStoreDetails() {
+            const name = document.getElementById('storeName').value;
+            const address = document.getElementById('storeAddress').value;
+            const phone = document.getElementById('storePhone').value;
+            const email = document.getElementById('storeEmail').value;
+            const tax = document.getElementById('storeTax').value;
+            
+            alert(`✅ Store Details Updated!\n\n${name}\n${address}\n${phone}\n${email}\nTax Rate: ${tax}%`);
+            closeModal('editStoreModal');
+        }
+
+        function saveStaffMember() {
+            const name = document.getElementById('staffName').value;
+            const email = document.getElementById('staffEmail').value;
+            const role = document.getElementById('staffRole').value;
+            const date = document.getElementById('staffDate').value;
+            
+            if (!name || !email) {
+                alert('Please fill in Name and Email');
+                return;
+            }
+            
+            alert(`✅ Staff Member Added!\n\nName: ${name}\nEmail: ${email}\nRole: ${role}\nStart Date: ${date || 'Not set'}`);
+            closeModal('addStaffModal');
+        }
+
+        function downloadReport() {
+            const format = document.querySelector('input[name="reportFormat"]:checked').value;
+            alert(`✅ Downloading report in ${format.toUpperCase()} format...\n\nReport will be saved to your downloads folder.`);
+            closeModal('reportModal');
+        }
     </script>
 </body>
 </html>
