@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
 import { InventoryAdjustmentDto } from './dto/inventory-adjustment.dto';
@@ -39,8 +39,9 @@ export class ProductsController {
   }
 
   @Get('inventory/chart')
-  getInventoryChartData() {
-    return this.productsService.getInventoryChartData();
+  getInventoryChartData(@Query('days') days?: string) {
+    const numDays = days ? parseInt(days, 10) : 30;
+    return this.productsService.getInventoryChartData(numDays);
   }
 
   @Post('inventory/adjust')

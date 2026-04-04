@@ -6,7 +6,7 @@
     <title>BluePOS | Complete Point of Sale System</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="/chart.js"></script>
     <style>
        * {
@@ -236,16 +236,16 @@ html[data-theme="dark"] td {
     border-color: var(--border-color);
 }
 
-/* White background for table headers even in dark theme */
+/* Solid violet background for table headers even in dark theme */
 html[data-theme="dark"] th {
-    background-color: #ffffff !important;
-    border-color: #e2e8f0 !important;
-    color: #475569 !important;
+    background: #8b5cf6 !important;
+    border-color: #7c3aed !important;
+    color: #ffffff !important;
 }
 
 html[data-theme="dark"] thead th {
-    background-color: #ffffff !important;
-    color: #475569 !important;
+    background: #8b5cf6 !important;
+    color: #ffffff !important;
 }
 
 html[data-theme="dark"] .notif-panel,
@@ -432,11 +432,11 @@ html[data-theme="light"] th:not([style*="color"]) {
     color: #475569;
 }
 
-/* White background for table headers in light theme */
+/* Solid violet background for table headers in light theme */
 html[data-theme="light"] th,
 html[data-theme="light"] thead th {
-    background-color: #ffffff !important;
-    color: #475569 !important;
+    background: #8b5cf6 !important;
+    color: #ffffff !important;
 }
 
 /* CRITICAL: White text inside violet/purple backgrounds in light theme */
@@ -1402,15 +1402,18 @@ html[data-theme="dark"] .top-rank-number {
     height: 48px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--primary);
     flex-shrink: 0;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: transparent;
     color: white;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.leaderboard-avatar.initials-only {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
 }
 .leaderboard-info {
     flex: 1;
@@ -2444,22 +2447,29 @@ input[type="radio"]:focus {
 }
 
 .data-table th {
-    background: #ffffff;
+    background: #8b5cf6;
     font-weight: 700;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #475569 !important;
-    border-bottom: 2px solid #e2e8f0;
+    color: #ffffff !important;
+    border-bottom: 2px solid #7c3aed;
     padding: 16px 20px;
     position: sticky;
     top: 0;
     z-index: 1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
 }
 
 .data-table thead th {
-    color: #475569 !important;
+    color: #ffffff !important;
+    background: #8b5cf6;
+}
+
+.data-table thead th:hover {
+    background: #7c3aed;
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+    transform: translateY(-1px);
 }
 
 .data-table thead th:first-child {
@@ -3794,6 +3804,92 @@ input[type="radio"]:focus {
     }
 }
 
+/* Account Settings - Horizontal Layout on PC */
+@media (min-width: 1024px) {
+    .account-settings-container {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+    }
+}
+
+/* Mobile Profile Header - Professional Centered Design */
+@media (max-width: 768px) {
+    .profile-header-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    
+    .account-settings-container {
+        padding: 0 !important;
+        gap: 12px !important;
+    }
+    
+    #settings-tab-account {
+        padding: 8px 0 !important;
+    }
+    
+    .profile-card,
+    .security-card {
+        border-radius: 12px !important;
+    }
+    
+    .profile-card > div:first-child,
+    .security-card > div:first-child {
+        padding: 24px 20px 20px 20px !important;
+    }
+    
+    .profile-card > div:last-child,
+    .security-card > div:last-child {
+        padding: 24px 20px !important;
+    }
+    
+    /* Maximize settings panel on mobile */
+    .settings-tab-content > div:first-child {
+        padding: 0 !important;
+    }
+}
+
+/* Professional Settings Form Styles */
+#editProfileForm input:focus,
+#passwordChangeForm input:focus,
+#settingsVerificationCode:focus,
+#settingsNewPassword:focus,
+#settingsConfirmPassword:focus {
+    outline: none;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+    background: white !important;
+}
+
+#editProfileForm input:hover,
+#passwordChangeForm input:hover {
+    border-color: #c7d2fe;
+}
+
+.profile-card button:hover,
+.security-card button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4) !important;
+}
+
+.profile-card button:active,
+.security-card button:active {
+    transform: translateY(0);
+}
+
+#changePasswordBtn:hover {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5) !important;
+}
+
+/* Label for camera button hover */
+label[for="profilePicInput"]:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
 /* Ensure all containers don't overflow */
 img, video, iframe, canvas, svg {
     max-width: 100%;
@@ -4342,13 +4438,118 @@ button#menuToggle,
             return [];
         }
 
+        // Helper function to get POS settings
+        function getPOSSettings() {
+            const savedSettings = localStorage.getItem('posSettings');
+            const defaultSettings = {
+                storeName: '',
+                storeAddress: '',
+                storePhone: '',
+                storeEmail: '',
+                storeTaxId: '',
+                taxEnabled: false,
+                taxName: 'VAT',
+                taxRate: '12',
+                taxType: 'inclusive',
+                receiptHeader: '',
+                receiptFooter: '',
+                receiptWidth: '80',
+                autoPrint: false,
+                showLogo: true,
+                printerName: '',
+                printCopies: '1',
+                currencySymbol: '₱',
+                currencyPosition: 'before',
+                decimalPlaces: '2',
+                thousandSeparator: ',',
+                lowStockThreshold: '10',
+                trackInventory: true,
+                allowNegativeStock: false,
+                salesPrefix: 'SALE-',
+                defaultDiscount: '0',
+                maxDiscount: '20',
+                paymentCash: true,
+                paymentCard: true,
+                paymentMobile: true,
+                paymentBank: false
+            };
+
+            if (savedSettings) {
+                try {
+                    return { ...defaultSettings, ...JSON.parse(savedSettings) };
+                } catch (e) {
+                    console.error('Error parsing POS settings:', e);
+                    return defaultSettings;
+                }
+            }
+            
+            // Try legacy settings
+            const legacyPrinter = localStorage.getItem('printerName');
+            const legacyCurrency = localStorage.getItem('currencySymbol');
+            if (legacyPrinter) defaultSettings.printerName = legacyPrinter;
+            if (legacyCurrency) defaultSettings.currencySymbol = legacyCurrency;
+            
+            return defaultSettings;
+        }
+
         function formatCurrency(value) {
             const amount = Number(value);
             const safeAmount = Number.isFinite(amount) ? amount : 0;
-            return `₱${safeAmount.toLocaleString('en-PH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
+            
+            // Get POS settings for dynamic formatting
+            const posSettings = getPOSSettings();
+            const decimalPlaces = parseInt(posSettings.decimalPlaces) || 2;
+            const currencySymbol = posSettings.currencySymbol || '₱';
+            const currencyPosition = posSettings.currencyPosition || 'before';
+            const thousandSeparator = posSettings.thousandSeparator || ',';
+            
+            // Format the number with appropriate decimal places
+            let formattedAmount = safeAmount.toFixed(decimalPlaces);
+            
+            // Add thousand separators if configured
+            if (thousandSeparator) {
+                const parts = formattedAmount.split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
+                formattedAmount = parts.join('.');
+            }
+            
+            // Position currency symbol
+            if (currencyPosition === 'after') {
+                return `${formattedAmount}${currencySymbol}`;
+            } else {
+                return `${currencySymbol}${formattedAmount}`;
+            }
+        }
+        
+        // Helper function to calculate tax on an amount
+        function calculateTax(amount) {
+            const posSettings = getPOSSettings();
+            if (!posSettings.taxEnabled) {
+                return { taxAmount: 0, totalWithTax: amount, subtotal: amount };
+            }
+            
+            const taxRate = parseFloat(posSettings.taxRate) || 0;
+            const taxType = posSettings.taxType || 'inclusive';
+            
+            if (taxType === 'inclusive') {
+                // Tax is already included in the price
+                const subtotal = amount / (1 + taxRate / 100);
+                const taxAmount = amount - subtotal;
+                return { taxAmount, totalWithTax: amount, subtotal };
+            } else {
+                // Tax is added to the price
+                const taxAmount = amount * (taxRate / 100);
+                const totalWithTax = amount + taxAmount;
+                return { taxAmount, totalWithTax, subtotal: amount };
+            }
+        }
+        
+        // Helper function to format sales number
+        function formatSalesNumber(id) {
+            const posSettings = getPOSSettings();
+            const prefix = posSettings.salesPrefix || 'SALE-';
+            const paddedId = String(id).padStart(5, '0');
+            return `${prefix}${paddedId}`;
         }
 
         function resolveProfileImage(profilePic, updatedAt) {
@@ -5646,8 +5847,8 @@ button#menuToggle,
                         ${topStaffList.map((s, i) => {
                             const avatarSrc = s.profilePic ? resolveProfileImage(s.profilePic, s.updatedAt) : '';
                             const avatarHtml = avatarSrc
-                                ? '<img class="leaderboard-avatar" src="' + avatarSrc + '" alt="' + (s.name || 'user').replace(/"/g, '&quot;') + '" title="' + (s.name || 'user').replace(/"/g, '&quot;') + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><span class="leaderboard-avatar" style="display:none;">' + (s.name || '?').charAt(0).toUpperCase() + '</span>'
-                                : '<span class="leaderboard-avatar">' + (s.name || '?').charAt(0).toUpperCase() + '</span>';
+                                ? '<img class="leaderboard-avatar" src="' + avatarSrc + '" alt="' + (s.name || 'user').replace(/"/g, '&quot;') + '" title="' + (s.name || 'user').replace(/"/g, '&quot;') + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><span class="leaderboard-avatar initials-only" style="display:none;">' + (s.name || '?').charAt(0).toUpperCase() + '</span>'
+                                : '<span class="leaderboard-avatar initials-only">' + (s.name || '?').charAt(0).toUpperCase() + '</span>';
                             return '<li class="leaderboard-item" title="' + (s.name || 'Unknown').replace(/"/g, '&quot;') + '">' +
                                 '<span class="leaderboard-rank rank-' + (i + 1) + '">' + (i + 1) + '</span>' +
                                 avatarHtml +
@@ -6530,7 +6731,7 @@ button#menuToggle,
         async function loadProducts() {
             const [productsResponse, chartData] = await Promise.all([
                 apiCall('/products'),
-                apiCall('/products/inventory/chart')
+                apiCall('/products/inventory/chart?days=30')
             ]);
             const products = normalizeArrayResponse(productsResponse);
             const isAdmin = currentUser.userType === 'admin';
@@ -6689,7 +6890,7 @@ button#menuToggle,
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 22px;">
                     <div style="background: white; border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-                        <h3 style="margin-bottom: 10px;">Inventory Flow (Last 7 Days)</h3>
+                        <h3 style="margin-bottom: 10px;">📊 Daily Inventory Flow (Last 30 Days)</h3>
                         <canvas id="inventoryChart" style="width: 100%; max-height: 280px;"></canvas>
                     </div>
 
@@ -6762,7 +6963,10 @@ button#menuToggle,
                 inventoryChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: (chartData?.labels || []).map(d => new Date(d).toLocaleDateString()),
+                        labels: (chartData?.labels || []).map(d => {
+                            const date = new Date(d);
+                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        }),
                         datasets: [
                             {
                                 label: 'Stock In',
@@ -6791,8 +6995,42 @@ button#menuToggle,
                             easing: 'easeOutQuart',
                         },
                         plugins: {
-                            legend: { position: 'top' }
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        const dateStr = (chartData?.labels || [])[index];
+                                        if (dateStr) {
+                                            const date = new Date(dateStr);
+                                            return date.toLocaleDateString('en-US', { 
+                                                weekday: 'short', 
+                                                year: 'numeric', 
+                                                month: 'short', 
+                                                day: 'numeric' 
+                                            });
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
                         },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 15
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
                     },
                 });
             }
@@ -6966,8 +7204,8 @@ button#menuToggle,
                                 const profileSrc = member.profilePic ? resolveProfileImage(member.profilePic, member.updatedAt) : '';
                                 const initials = (member.name || '?').split(' ').map(n => n.charAt(0)).join('').toUpperCase();
                                 const avatarHtml = profileSrc
-                                    ? `<div style="position: relative; width: 60px; height: 60px;"><img src="${profileSrc}" alt="${member.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #c7d2fe; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: 700; display: none; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #a5b4fc; position: absolute; top: 0; left: 0;">${initials}</span></div>`
-                                    : `<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #a5b4fc; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);">${initials}</div>`;
+                                    ? `<div style="position: relative; width: 60px; height: 60px;"><img src="${profileSrc}" alt="${member.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #c7d2fe;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: 700; display: none; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #a5b4fc; position: absolute; top: 0; left: 0;">${initials}</span></div>`
+                                    : `<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #a5b4fc;">${initials}</div>`;
                                 return `
                                 <tr>
                                     <td style="text-align: center; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -7190,100 +7428,133 @@ button#menuToggle,
             const html = `
                 <div style="width: 100%; padding: 2px 2px 20px 2px;">
                     <!-- Settings Tabs with Facebook-like Layout -->
-                    <div class="panel" style="width: 98%; margin-left: auto; margin-right: auto; background: #ffffff; border: 2px solid #e5e7eb; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border-radius: 16px;">
+                    <div class="panel" style="width: 100%; max-width: 1600px; margin-left: auto; margin-right: auto; background: #ffffff; border: 2px solid #e5e7eb; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border-radius: 16px;">
                         <div style="display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 0; flex-wrap: wrap; background: #ffffff; border-radius: 14px 14px 0 0;">
                             <button class="settings-tab active" data-tab="account" style="padding: 16px 24px; background: none; border: none; cursor: pointer; font-weight: 600; font-size: 16px; color: gray; border-bottom: 4px solid gray; margin-bottom: -2px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">🔐 Account</button>
-                            <button class="settings-tab" data-tab="pos" style="padding: 16px 24px; background: none; border: none; cursor: pointer; font-weight: 500; font-size: 16px; color: gray; border-bottom: 4px solid #e5e7eb; margin-bottom: -2px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">⚙️ POS Settings</button>
                         </div>
 
                         <!-- Account Tab - Modern Design -->
-                        <div id="settings-tab-account" class="settings-tab-content" style="width: 100%; max-width: 100%; padding: 30px; animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; display: flex; gap: 30px; flex-wrap: wrap; overflow-x: hidden;">
+                        <div id="settings-tab-account" class="settings-tab-content" style="width: 100%; max-width: 100%; margin: 0 auto; padding: 30px 5px; animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; overflow-x: hidden;">
                             
-                            <!-- Left Panel: Profile Information -->
-                            <div style="flex: 1; min-width: 350px; max-width: 100%; animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); width: 100%; box-sizing: border-box;">
-                                <!-- Title at Top -->
-                                <h4 style="margin: 0 0 25px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px;">👤 Personal Information</h4>
-
-                                <!-- Profile Picture Section (Left) + Form Fields (Right) -->
-                                <div style="display: flex; gap: 20px; margin-bottom: 30px; padding-bottom: 30px; border-bottom: 2px solid #e2e8f0; box-sizing: border-box;">
-                                    <!-- Profile Picture Left -->
-                                    <div style="display: flex; flex-direction: column; align-items: center; min-width: 140px; box-sizing: border-box;">
-                                        <div style="position: relative; width: 100px; height: 100px; margin-bottom: 16px;">
-                                            <img id="profilePreview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; border: 2px solid #c7d2fe; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2); position: absolute; top: 0; left: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);" alt="Profile preview" />
-                                            <div id="profileInitialsPreview" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 36px; border: 2px solid #a5b4fc; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">${(user.name || '?').charAt(0).toUpperCase()}</div>
+                            <!-- Horizontal Flex Container for PC Screens -->
+                            <div class="account-settings-container" style="display: flex; flex-direction: column; gap: 20px; align-items: stretch;">
+                            
+                            <!-- Profile Card - Professional Design -->
+                            <div class="profile-card" style="flex: 1; min-width: 0; margin-top: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;">
+                                
+                                <!-- Profile Header Section -->
+                                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 32px 40px 24px 40px; position: relative;">
+                                    <div class="profile-header-container" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; max-width: 100%;">
+                                        <!-- Profile Image -->
+                                        <div style="position: relative; margin-bottom: 16px; margin-left: 12px;">
+                                            <div style="position: relative; width: 120px; height: 120px;">
+                                                <img id="profilePreview" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: none; background: white; border: 4px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);" alt="Profile preview" />
+                                                <div id="profileInitialsPreview" style="width: 120px; height: 120px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; color: #8b5cf6; font-weight: 800; font-size: 48px; border: 4px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);">${(user.name || '?').charAt(0).toUpperCase()}</div>
+                                            </div>
+                                            <label for="profilePicInput" style="position: absolute; bottom: 0; right: 0; cursor: pointer; width: 36px; height: 36px; background: #9ca3af; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: all 0.3s; z-index: 10;">
+                                                <i class="fas fa-camera" style="font-size: 14px; color: white;"></i>
+                                            </label>
+                                            <input id="profilePicInput" name="profilePic" type="file" accept="image/jpeg,image/png,image/gif" style="display: none;" />
                                         </div>
-                                        <label for="profilePicInput" style="cursor: pointer; color: white; font-weight: 600; text-decoration: none; padding: 12px 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 8px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); display: inline-block; font-size: 13px; white-space: nowrap;">📷 Change</label>
-                                        <input id="profilePicInput" name="profilePic" type="file" accept="image/jpeg,image/png,image/gif" style="display: none;" />
+                                        <!-- Profile Info -->
+                                        <h3 style="margin: 0 0 6px 0; color: white; font-size: 24px; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">${user.name || 'User'}</h3>
+                                        <p style="margin: 0 0 10px 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">${user.email || ''}</p>
+                                        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); color: white; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(255, 255, 255, 0.3);">
+                                            <span style="font-size: 14px;">${currentUser.userType === 'admin' ? '👑' : '💼'}</span>
+                                            ${currentUser.userType === 'admin' ? 'Administrator' : 'Cashier'}
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <!-- Form Fields Right -->
-                                    <form id="editProfileForm" class="modal-form" style="margin-bottom: 0; flex: 1; max-width: 100%; box-sizing: border-box;">
+                                <!-- Profile Form Section -->
+                                <div style="padding: 32px 40px;">
+                                    <h4 style="margin: 0 0 24px 0; color: #1e293b; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-user-edit" style="color: #8b5cf6;"></i>
+                                        Edit Profile Information
+                                    </h4>
+                                    <form id="editProfileForm" class="modal-form" style="margin-bottom: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;">
                                         <div class="modal-field">
-                                            <label for="editName" style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Full Name</label>
-                                            <input id="editName" name="name" type="text" value="${user.name || ''}" style="width: 100%; max-width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff; box-sizing: border-box;" required />
+                                            <label for="editName" style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Full Name</label>
+                                            <input id="editName" name="name" type="text" value="${user.name || ''}" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: #f9fafb; box-sizing: border-box; font-weight: 400;" required />
                                         </div>
                                         <div class="modal-field">
-                                            <label for="editEmail" style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Email Address</label>
-                                            <input id="editEmail" name="email" type="email" value="${user.email || ''}" style="width: 100%; max-width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff; box-sizing: border-box;" required />
+                                            <label for="editEmail" style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Email Address</label>
+                                            <input id="editEmail" name="email" type="email" value="${user.email || ''}" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: #f9fafb; box-sizing: border-box; font-weight: 400;" required />
                                         </div>
                                         <div class="modal-field">
-                                            <label for="editBusinessName" style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Business Name</label>
-                                            <input id="editBusinessName" name="businessName" type="text" value="${user.businessName || ''}" style="width: 100%; max-width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff; box-sizing: border-box;" />
+                                            <label for="editBusinessName" style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Business Name</label>
+                                            <input id="editBusinessName" name="businessName" type="text" value="${user.businessName || ''}" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: #f9fafb; box-sizing: border-box; font-weight: 400;" />
+                                        </div>
+                                        
+                                        <!-- Save Button -->
+                                        <div style="text-align: center; margin-top: 8px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                                            <button type="submit" class="btn-modal-primary" id="saveEditProfileBtn" style="padding: 12px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); display: inline-flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-save"></i> Save Changes
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
-
-                                <!-- Save Button Below -->
-                                <button type="submit" form="editProfileForm" class="btn-modal-primary" id="saveEditProfileBtn" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">💾 Save Profile Changes</button>
                             </div>
 
-                            <!-- Right Panel: Security -->
-                            <div style="flex: 1; min-width: 350px; max-width: 100%; padding: 20px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; animation: slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
-                                <h4 style="margin-top: 0; margin-bottom: 20px; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px;">🔒 Security</h4>
-                                <button type="button" id="changePasswordBtn" style="width: 100%; padding: 12px 24px; background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); margin-bottom: 15px;">Change Password</button>
-                                <form id="passwordChangeForm" style="display: none; margin-top: 15px; padding: 20px; background: white; border-radius: 12px; border: 2px solid rgba(99, 102, 241, 0.2); animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
-                                    <div class="modal-field">
-                                        <label style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Verification Code</label>
-                                        <input id="settingsVerificationCode" type="text" placeholder="6-digit code" maxlength="6" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff;" />
-                                    </div>
-                                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                        <button type="button" id="verifySettingsCodeBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Verify Code</button>
-                                        <button type="button" id="resendSettingsCodeBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">Resend Code</button>
-                                    </div>
-                                    <div id="settingsPasswordFields" style="display: none; margin-top: 15px; animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
-                                        <div class="modal-field">
-                                            <label style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">New Password</label>
-                                            <input id="settingsNewPassword" type="password" minlength="6" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff;" />
+                            <!-- Security Card - Professional Design -->
+                            <div class="security-card" style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); animation: slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;">
+                                
+                                <!-- Security Header Section -->
+                                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 32px 40px; position: relative;">
+                                    <div style="text-align: center; width: 100%; max-width: 100%;">
+                                        <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                                            <i class="fas fa-shield-alt" style="font-size: 26px; color: white;"></i>
                                         </div>
-                                        <div class="modal-field">
-                                            <label style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Confirm New Password</label>
-                                            <input id="settingsConfirmPassword" type="password" minlength="6" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff;" />
-                                        <div id="settingsPasswordMatchError" style="color: #ef4444; font-size: 13px; margin-top: 6px; display: none; font-weight: 600;">❌ Passwords don't match</div>
+                                        <h4 style="margin: 0 0 6px 0; color: white; font-size: 20px; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Security Settings</h4>
+                                        <p style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 13px;">Manage your password and account security</p>
                                     </div>
-                                    <button type="button" id="saveNewPasswordBtn" style="width: 100%; padding: 12px 16px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); margin-top: 15px;">Save New Password</button>
-                                </form>
+                                </div>
+                                
+                                <!-- Security Form Section -->
+                                <div style="padding: 32px 40px;">
+                                    <button type="button" id="changePasswordBtn" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
+                                        <i class="fas fa-key"></i> Change Password
+                                    </button>
+                                    
+                                    <form id="passwordChangeForm" style="display: none; margin-top: 0; padding: 20px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                        <div class="modal-field" style="margin-bottom: 20px;">
+                                            <label style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Verification Code</label>
+                                            <input id="settingsVerificationCode" type="text" placeholder="Enter 6-digit code" maxlength="6" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: white; text-align: center; font-weight: 600; letter-spacing: 4px; box-sizing: border-box;" />
+                                        </div>
+                                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                                            <button type="button" id="verifySettingsCodeBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fas fa-check"></i> Verify
+                                            </button>
+                                            <button type="button" id="resendSettingsCodeBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fas fa-redo"></i> Resend
+                                            </button>
+                                        </div>
+                                        <div id="settingsPasswordFields" style="display: none; flex-direction: column; gap: 16px; animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                            <div class="modal-field">
+                                                <label style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">New Password</label>
+                                                <input id="settingsNewPassword" type="password" minlength="6" placeholder="Enter new password" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: white; box-sizing: border-box;" />
+                                            </div>
+                                            <div class="modal-field">
+                                                <label style="color: #475569; font-weight: 600; margin-bottom: 8px; display: block; font-size: 13px;">Confirm Password</label>
+                                                <input id="settingsConfirmPassword" type="password" minlength="6" placeholder="Re-enter password" style="width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: all 0.3s; background: white; box-sizing: border-box;" />
+                                                <div id="settingsPasswordMatchError" style="color: #ef4444; font-size: 12px; margin-top: 8px; display: none; font-weight: 600; padding: 10px; background: #fee2e2; border-radius: 8px; text-align: center; border: 1px solid #fecaca;">
+                                                    <i class="fas fa-exclamation-triangle"></i> Passwords don't match
+                                                </div>
+                                            </div>
+                                            <div style="text-align: center; margin-top: 8px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                                                <button type="button" id="saveNewPasswordBtn" style="padding: 12px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); display: inline-flex; align-items: center; gap: 8px;">
+                                                    <i class="fas fa-save"></i> Save Password
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
+                            
+                            </div><!-- Close Flex Container -->
 
                         </div>
 
-                        <!-- POS Settings Tab -->
-                        <div id="settings-tab-pos" class="settings-tab-content" style="display: none; width: 100%; max-width: 100%; padding: 30px; animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; overflow-x: hidden;">
-                            <div style="animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
-                                <h4 style="margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">🖨️ Receipt Printer</h4>
-                                <div class="modal-field">
-                                    <label style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Printer Name</label>
-                                    <input id="printerName" type="text" placeholder="e.g., POS Printer" style="width: 100%; max-width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff; box-sizing: border-box;" />
-                                </div>
-                            </div>
-                            <div style="margin-top: 30px; animation: slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
-                                <h4 style="margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">💱 Currency</h4>
-                                <div class="modal-field">
-                                    <label style="color: #1e293b; font-weight: 600; margin-bottom: 8px; display: block;">Currency Symbol</label>
-                                    <input id="currencySymbol" type="text" placeholder="₱" maxlength="3" value="₱" style="width: 100%; max-width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); background: #ffffff; box-sizing: border-box;" />
-                                </div>
-                            </div>
-                            <button id="savePOSSettingsBtn" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3); margin-top: 25px;">💾 Save Settings</button>
-                        </div>
                     </div>
                 </div>
 
@@ -7394,8 +7665,8 @@ button#menuToggle,
                     document.querySelectorAll('.settings-tab-content').forEach(c => c.style.display = 'none');
                     e.target.classList.add('active');
                     const tabElement = document.getElementById(`settings-tab-${tabName}`);
-                    // Use flex for account tab to maintain two-panel layout, block for others
-                    tabElement.style.display = tabName === 'account' ? 'flex' : 'block';
+                    // Display block for all tabs
+                    tabElement.style.display = 'block';
                     
                     // Update border color
                     document.querySelectorAll('.settings-tab').forEach(b => {
@@ -7488,7 +7759,7 @@ button#menuToggle,
                         body: JSON.stringify({ code })
                     });
                     if (response && response.success) {
-                        document.getElementById('settingsPasswordFields').style.display = 'block';
+                        document.getElementById('settingsPasswordFields').style.display = 'flex';
                         showSuccessModal('Code Verified', 'Your code is valid. Now enter your new password.');
                     }
                 } catch (error) {
@@ -7553,16 +7824,395 @@ button#menuToggle,
                 }
             });
 
-            // Save POS Settings Handler
-            document.getElementById('savePOSSettingsBtn').addEventListener('click', async () => {
-                const printerName = document.getElementById('printerName').value;
-                const currencySymbol = document.getElementById('currencySymbol').value || '₱';
+            const hasPOSSettingsTab = !!document.getElementById('settings-tab-pos');
 
+            // Save POS Settings Handler
+            if (hasPOSSettingsTab) {
+            document.getElementById('savePOSSettingsBtn').addEventListener('click', async () => {
+                // Business Information (optional - may not exist)
+                const posStoreName = document.getElementById('posStoreName')?.value || '';
+                const posStoreAddress = document.getElementById('posStoreAddress')?.value || '';
+                const posStorePhone = document.getElementById('posStorePhone')?.value || '';
+                const posStoreEmail = document.getElementById('posStoreEmail')?.value || '';
+                const posStoreTaxId = document.getElementById('posStoreTaxId')?.value || '';
+
+                // Tax Configuration (optional - may not exist)
+                const posTaxEnabled = document.getElementById('posTaxEnabled')?.checked || false;
+                const posTaxName = document.getElementById('posTaxName')?.value || 'VAT';
+                const posTaxRate = document.getElementById('posTaxRate')?.value || '0';
+                const posTaxType = document.getElementById('posTaxType')?.value || 'inclusive';
+
+                // Receipt Configuration (optional - may not exist)
+                const posReceiptHeader = document.getElementById('posReceiptHeader')?.value || '';
+                const posReceiptFooter = document.getElementById('posReceiptFooter')?.value || '';
+                const posReceiptWidth = document.getElementById('posReceiptWidth')?.value || '80';
+                const posAutoPrint = document.getElementById('posAutoPrint')?.checked || false;
+                const posShowLogo = document.getElementById('posShowLogo')?.checked || true;
+
+                // Printer Settings (optional - may not exist)
+                const printerName = document.getElementById('printerName')?.value || '';
+                const posPrintCopies = document.getElementById('posPrintCopies')?.value || '1';
+
+                // Currency & Format
+                const currencySymbol = document.getElementById('currencySymbol').value || '₱';
+                const posCurrencyPosition = document.getElementById('posCurrencyPosition').value;
+                const posDecimalPlaces = document.getElementById('posDecimalPlaces').value;
+                const posThousandSeparator = document.getElementById('posThousandSeparator').value;
+
+                // Inventory Settings
+                const posLowStockThreshold = document.getElementById('posLowStockThreshold').value;
+                const posTrackInventory = document.getElementById('posTrackInventory').checked;
+                const posAllowNegativeStock = document.getElementById('posAllowNegativeStock').checked;
+
+                // Sales Settings
+                const posSalesPrefix = document.getElementById('posSalesPrefix').value;
+                const posDefaultDiscount = document.getElementById('posDefaultDiscount').value;
+                const posMaxDiscount = document.getElementById('posMaxDiscount').value;
+
+                // Payment Methods
+                const posPaymentCash = document.getElementById('posPaymentCash').checked;
+                const posPaymentCard = document.getElementById('posPaymentCard').checked;
+                const posPaymentMobile = document.getElementById('posPaymentMobile').checked;
+                const posPaymentBank = document.getElementById('posPaymentBank').checked;
+
+                // Save all settings to localStorage
+                const posSettings = {
+                    // Business Information
+                    storeName: posStoreName,
+                    storeAddress: posStoreAddress,
+                    storePhone: posStorePhone,
+                    storeEmail: posStoreEmail,
+                    storeTaxId: posStoreTaxId,
+                    
+                    // Tax Configuration
+                    taxEnabled: posTaxEnabled,
+                    taxName: posTaxName,
+                    taxRate: posTaxRate,
+                    taxType: posTaxType,
+                    
+                    // Receipt Configuration
+                    receiptHeader: posReceiptHeader,
+                    receiptFooter: posReceiptFooter,
+                    receiptWidth: posReceiptWidth,
+                    autoPrint: posAutoPrint,
+                    showLogo: posShowLogo,
+                    
+                    // Printer Settings
+                    printerName: printerName,
+                    printCopies: posPrintCopies,
+                    
+                    // Currency & Format
+                    currencySymbol: currencySymbol,
+                    currencyPosition: posCurrencyPosition,
+                    decimalPlaces: posDecimalPlaces,
+                    thousandSeparator: posThousandSeparator,
+                    
+                    // Inventory Settings
+                    lowStockThreshold: posLowStockThreshold,
+                    trackInventory: posTrackInventory,
+                    allowNegativeStock: posAllowNegativeStock,
+                    
+                    // Sales Settings
+                    salesPrefix: posSalesPrefix,
+                    defaultDiscount: posDefaultDiscount,
+                    maxDiscount: posMaxDiscount,
+                    
+                    // Payment Methods
+                    paymentCash: posPaymentCash,
+                    paymentCard: posPaymentCard,
+                    paymentMobile: posPaymentMobile,
+                    paymentBank: posPaymentBank
+                };
+
+                // Save to localStorage
+                localStorage.setItem('posSettings', JSON.stringify(posSettings));
+                
+                // Also save legacy keys for backward compatibility
                 localStorage.setItem('printerName', printerName);
                 localStorage.setItem('currencySymbol', currencySymbol);
 
-                showSuccessModal('Settings Saved', 'POS settings have been saved successfully.');
+                showSuccessModal('Settings Saved', 'All POS settings have been saved successfully.');
             });
+
+            // Reset POS Settings Handler
+            document.getElementById('resetPOSSettingsBtn').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to reset all POS settings to defaults? This action cannot be undone.')) {
+                    const defaultSettings = {
+                        storeName: '',
+                        storeAddress: '',
+                        storePhone: '',
+                        storeEmail: '',
+                        storeTaxId: '',
+                        taxEnabled: false,
+                        taxName: 'VAT',
+                        taxRate: '12',
+                        taxType: 'inclusive',
+                        receiptHeader: '',
+                        receiptFooter: '',
+                        receiptWidth: '80',
+                        autoPrint: false,
+                        showLogo: true,
+                        printerName: '',
+                        printCopies: '1',
+                        currencySymbol: '₱',
+                        currencyPosition: 'before',
+                        decimalPlaces: '2',
+                        thousandSeparator: ',',
+                        lowStockThreshold: '10',
+                        trackInventory: true,
+                        allowNegativeStock: false,
+                        salesPrefix: 'SALE-',
+                        defaultDiscount: '0',
+                        maxDiscount: '20',
+                        paymentCash: true,
+                        paymentCard: true,
+                        paymentMobile: true,
+                        paymentBank: false
+                    };
+
+                    localStorage.setItem('posSettings', JSON.stringify(defaultSettings));
+                    localStorage.setItem('printerName', defaultSettings.printerName);
+                    localStorage.setItem('currencySymbol', defaultSettings.currencySymbol);
+
+                    // Reload settings page
+                    await loadSettings();
+                    showSuccessModal('Reset Complete', 'All POS settings have been reset to defaults.');
+                }
+            });
+
+            // Preview Receipt Handler
+            document.getElementById('previewReceiptBtn').addEventListener('click', () => {
+                // Get current form values (not saved yet)
+                const tempSettings = {
+                    storeName: document.getElementById('posStoreName')?.value || 'Your Store Name',
+                    storeAddress: document.getElementById('posStoreAddress')?.value || '123 Main Street, City',
+                    storePhone: document.getElementById('posStorePhone')?.value || '+1 234 567 8900',
+                    storeEmail: document.getElementById('posStoreEmail')?.value || 'store@example.com',
+                    storeTaxId: document.getElementById('posStoreTaxId')?.value || '123-456-789',
+                    taxEnabled: document.getElementById('posTaxEnabled')?.checked || false,
+                    taxName: document.getElementById('posTaxName')?.value || 'VAT',
+                    taxRate: document.getElementById('posTaxRate')?.value || '12',
+                    taxType: document.getElementById('posTaxType')?.value || 'inclusive',
+                    receiptHeader: document.getElementById('posReceiptHeader')?.value || 'Thank you for shopping with us!',
+                    receiptFooter: document.getElementById('posReceiptFooter')?.value || 'Visit us again soon!',
+                    receiptWidth: document.getElementById('posReceiptWidth')?.value || '80',
+                    showLogo: document.getElementById('posShowLogo')?.checked || true,
+                    currencySymbol: document.getElementById('currencySymbol').value || '₱',
+                    currencyPosition: document.getElementById('posCurrencyPosition').value || 'before',
+                    decimalPlaces: document.getElementById('posDecimalPlaces').value || '2',
+                    thousandSeparator: document.getElementById('posThousandSeparator').value,
+                    salesPrefix: document.getElementById('posSalesPrefix').value || 'SALE-'
+                };
+
+                // Sample items for preview
+                const sampleItems = [
+                    { name: 'Sample Product 1', quantity: 2, price: 150.00 },
+                    { name: 'Sample Product 2', quantity: 1, price: 299.50 },
+                    { name: 'Sample Product 3', quantity: 3, price: 75.00 }
+                ];
+
+                // Calculate totals
+                const subtotal = sampleItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+                let tax = 0;
+                let total = subtotal;
+
+                if (tempSettings.taxEnabled) {
+                    const taxRate = parseFloat(tempSettings.taxRate) || 0;
+                    if (tempSettings.taxType === 'inclusive') {
+                        tax = subtotal - (subtotal / (1 + taxRate / 100));
+                        total = subtotal;
+                    } else {
+                        tax = subtotal * (taxRate / 100);
+                        total = subtotal + tax;
+                    }
+                }
+
+                // Format currency helper for preview
+                const formatPreviewCurrency = (value) => {
+                    const decimalPlaces = parseInt(tempSettings.decimalPlaces) || 2;
+                    let formatted = value.toFixed(decimalPlaces);
+                    
+                    if (tempSettings.thousandSeparator) {
+                        const parts = formatted.split('.');
+                        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, tempSettings.thousandSeparator);
+                        formatted = parts.join('.');
+                    }
+                    
+                    return tempSettings.currencyPosition === 'after' 
+                        ? `${formatted}${tempSettings.currencySymbol}`
+                        : `${tempSettings.currencySymbol}${formatted}`;
+                };
+
+                // Generate receipt HTML
+                const receiptWidth = tempSettings.receiptWidth === '58' ? '200px' : '280px';
+                const receiptHTML = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Receipt Preview</title>
+                        <style>
+                            body {
+                                font-family: 'Courier New', monospace;
+                                margin: 20px;
+                                background: #f5f5f5;
+                                display: flex;
+                                justify-content: center;
+                                align-items: flex-start;
+                                min-height: 100vh;
+                                padding: 20px;
+                            }
+                            .receipt {
+                                width: ${receiptWidth};
+                                background: white;
+                                padding: 15px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                border: 1px solid #ddd;
+                            }
+                            .header {
+                                text-align: center;
+                                margin-bottom: 15px;
+                                padding-bottom: 10px;
+                                border-bottom: 2px dashed #333;
+                            }
+                            .store-name {
+                                font-size: 16px;
+                                font-weight: bold;
+                                margin-bottom: 5px;
+                            }
+                            .store-info {
+                                font-size: 11px;
+                                line-height: 1.4;
+                            }
+                            .custom-header {
+                                text-align: center;
+                                font-size: 11px;
+                                font-style: italic;
+                                margin: 10px 0;
+                                padding: 8px 0;
+                                border-top: 1px dashed #999;
+                                border-bottom: 1px dashed #999;
+                            }
+                            .date-section {
+                                font-size: 10px;
+                                margin: 10px 0;
+                                text-align: center;
+                            }
+                            .items {
+                                margin: 10px 0;
+                                font-size: 11px;
+                            }
+                            .item-row {
+                                margin: 5px 0;
+                            }
+                            .item-name {
+                                font-weight: bold;
+                            }
+                            .item-details {
+                                display: flex;
+                                justify-content: space-between;
+                                margin-top: 2px;
+                            }
+                            .totals {
+                                margin-top: 10px;
+                                padding-top: 10px;
+                                border-top: 2px dashed #333;
+                                font-size: 12px;
+                            }
+                            .total-row {
+                                display: flex;
+                                justify-content: space-between;
+                                margin: 5px 0;
+                            }
+                            .total-row.grand-total {
+                                font-weight: bold;
+                                font-size: 14px;
+                                margin-top: 8px;
+                                padding-top: 8px;
+                                border-top: 2px solid #333;
+                            }
+                            .footer {
+                                text-align: center;
+                                font-size: 11px;
+                                margin-top: 15px;
+                                padding-top: 10px;
+                                border-top: 2px dashed #333;
+                                font-style: italic;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt">
+                            <div class="header">
+                                ${tempSettings.showLogo ? '<div style="font-size: 32px; margin-bottom: 8px;">💼</div>' : ''}
+                                <div class="store-name">${tempSettings.storeName}</div>
+                                <div class="store-info">
+                                    ${tempSettings.storeAddress}<br>
+                                    ${tempSettings.storePhone}<br>
+                                    ${tempSettings.storeEmail}<br>
+                                    ${tempSettings.storeTaxId ? 'Tax ID: ' + tempSettings.storeTaxId : ''}
+                                </div>
+                            </div>
+                            
+                            ${tempSettings.receiptHeader ? `<div class="custom-header">${tempSettings.receiptHeader}</div>` : ''}
+                            
+                            <div class="date-section">
+                                <div>Receipt #: ${tempSettings.salesPrefix}00123</div>
+                                <div>Date: ${new Date().toLocaleString()}</div>
+                                <div>Cashier: ${currentUser.name || 'Demo Cashier'}</div>
+                            </div>
+                            
+                            <div class="items">
+                                ${sampleItems.map(item => `
+                                    <div class="item-row">
+                                        <div class="item-name">${item.name}</div>
+                                        <div class="item-details">
+                                            <span>${item.quantity} x ${formatPreviewCurrency(item.price)}</span>
+                                            <span>${formatPreviewCurrency(item.quantity * item.price)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="totals">
+                                <div class="total-row">
+                                    <span>Subtotal:</span>
+                                    <span>${formatPreviewCurrency(subtotal)}</span>
+                                </div>
+                                ${tempSettings.taxEnabled ? `
+                                    <div class="total-row">
+                                        <span>${tempSettings.taxName} (${tempSettings.taxRate}%):</span>
+                                        <span>${formatPreviewCurrency(tax)}</span>
+                                    </div>
+                                ` : ''}
+                                <div class="total-row grand-total">
+                                    <span>TOTAL:</span>
+                                    <span>${formatPreviewCurrency(total)}</span>
+                                </div>
+                            </div>
+                            
+                            ${tempSettings.receiptFooter ? `<div class="footer">${tempSettings.receiptFooter}</div>` : ''}
+                            
+                            <div style="text-align: center; font-size: 10px; margin-top: 15px; color: #666;">
+                                ═══════════════════════<br>
+                                PREVIEW ONLY
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                // Open preview in new window
+                const previewWindow = window.open('', '_blank', 'width=400,height=700');
+                if (previewWindow) {
+                    previewWindow.document.write(receiptHTML);
+                    previewWindow.document.close();
+                } else {
+                    alert('Please allow popups to view receipt preview.');
+                }
+            });
+
+            }
 
             // Profile Picture Handler
             const profilePicInput = document.getElementById('profilePicInput');
@@ -7583,20 +8233,160 @@ button#menuToggle,
                 });
             }
 
-            // Add smooth hover effects to all inputs
+            // Add smooth hover effects to all inputs with enhanced violet theme
             const inputs = document.querySelectorAll('#settings-tab-account input, #settings-tab-pos input');
             inputs.forEach(input => {
                 input.addEventListener('focus', function() {
-                    this.style.borderColor = '#6366f1';
-                    this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    this.style.borderColor = '#8b5cf6';
+                    this.style.boxShadow = '0 0 0 4px rgba(139, 92, 246, 0.12)';
                     this.style.transform = 'translateY(-2px)';
                 });
                 input.addEventListener('blur', function() {
-                    this.style.borderColor = '#e2e8f0';
+                    this.style.borderColor = '#e0e7ff';
                     this.style.boxShadow = 'none';
                     this.style.transform = 'translateY(0)';
                 });
             });
+
+            // Add hover effect to profile picture camera button
+            const profilePicLabel = document.querySelector('label[for="profilePicInput"]');
+            if (profilePicLabel) {
+                profilePicLabel.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.1) rotate(5deg)';
+                    this.style.boxShadow = '0 6px 24px rgba(139, 92, 246, 0.5)';
+                });
+                profilePicLabel.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1) rotate(0deg)';
+                    this.style.boxShadow = '0 4px 16px rgba(139, 92, 246, 0.4)';
+                });
+            }
+
+            // Add hover effect to profile preview
+            const settingsProfileInitials = document.getElementById('profileInitialsPreview');
+            const settingsProfilePreview = document.getElementById('profilePreview');
+            [settingsProfileInitials, settingsProfilePreview].forEach(el => {
+                if (el) {
+                    el.addEventListener('mouseenter', function() {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = '0 12px 32px rgba(139, 92, 246, 0.4)';
+                    });
+                    el.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = '0 8px 24px rgba(139, 92, 246, 0.3)';
+                    });
+                }
+            });
+
+            if (hasPOSSettingsTab) {
+
+            // Live currency preview updater
+            function updateCurrencyPreview() {
+                const currencySymbol = document.getElementById('currencySymbol').value || '₱';
+                const currencyPosition = document.getElementById('posCurrencyPosition').value || 'before';
+                const decimalPlaces = parseInt(document.getElementById('posDecimalPlaces').value) || 2;
+                const thousandSeparator = document.getElementById('posThousandSeparator').value;
+                
+                const sampleValue = 1234.56;
+                let formatted = sampleValue.toFixed(decimalPlaces);
+                
+                if (thousandSeparator) {
+                    const parts = formatted.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
+                    formatted = parts.join('.');
+                }
+                
+                const preview = currencyPosition === 'after' 
+                    ? `${formatted}${currencySymbol}`
+                    : `${currencySymbol}${formatted}`;
+                
+                const previewElement = document.getElementById('currencyPreview');
+                if (previewElement) {
+                    previewElement.textContent = preview;
+                }
+            }
+
+            // Add event listeners for currency format fields
+            const currencyFields = ['currencySymbol', 'posCurrencyPosition', 'posDecimalPlaces', 'posThousandSeparator'];
+            currencyFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', updateCurrencyPreview);
+                    field.addEventListener('change', updateCurrencyPreview);
+                }
+            });
+
+            // Initial preview update
+            updateCurrencyPreview();
+
+            // Tax preview updater
+            function updateTaxPreview() {
+                const taxEnabledEl = document.getElementById('posTaxEnabled');
+                const taxPreviewSection = document.getElementById('taxPreviewSection');
+                const taxPreviewContent = document.getElementById('taxPreviewContent');
+                
+                // If tax elements don't exist, skip this function
+                if (!taxEnabledEl || !taxPreviewSection || !taxPreviewContent) {
+                    return;
+                }
+                
+                const taxEnabled = taxEnabledEl.checked;
+                
+                if (!taxEnabled) {
+                    taxPreviewSection.style.display = 'none';
+                    return;
+                }
+                
+                taxPreviewSection.style.display = 'block';
+                
+                const taxName = document.getElementById('posTaxName').value || 'VAT';
+                const taxRate = parseFloat(document.getElementById('posTaxRate').value) || 0;
+                const taxType = document.getElementById('posTaxType').value || 'inclusive';
+                
+                const sampleAmount = 1000;
+                let subtotal, taxAmount, total;
+                
+                if (taxType === 'inclusive') {
+                    // Tax is included in the price
+                    total = sampleAmount;
+                    subtotal = sampleAmount / (1 + taxRate / 100);
+                    taxAmount = total - subtotal;
+                    
+                    taxPreviewContent.innerHTML = `
+                        <strong>Tax Inclusive Example (on ₱${sampleAmount.toFixed(2)} sale):</strong><br>
+                        • Price shown to customer: ₱${total.toFixed(2)}<br>
+                        • Subtotal (before tax): ₱${subtotal.toFixed(2)}<br>
+                        • ${taxName} (${taxRate}%): ₱${taxAmount.toFixed(2)}<br>
+                        • <strong>Total: ₱${total.toFixed(2)}</strong><br>
+                        <em style="font-size: 11px; color: #a16207;">Tax is already included in the selling price.</em>
+                    `;
+                } else {
+                    // Tax is added to the price
+                    subtotal = sampleAmount;
+                    taxAmount = sampleAmount * (taxRate / 100);
+                    total = subtotal + taxAmount;
+                    
+                    taxPreviewContent.innerHTML = `
+                        <strong>Tax Exclusive Example (on ₱${sampleAmount.toFixed(2)} base price):</strong><br>
+                        • Base price: ₱${subtotal.toFixed(2)}<br>
+                        • ${taxName} (${taxRate}%): ₱${taxAmount.toFixed(2)}<br>
+                        • <strong>Total with tax: ₱${total.toFixed(2)}</strong><br>
+                        <em style="font-size: 11px; color: #a16207;">Tax is added on top of the selling price.</em>
+                    `;
+                }
+            }
+
+            // Add event listeners for tax fields
+            const taxFields = ['posTaxEnabled', 'posTaxName', 'posTaxRate', 'posTaxType'];
+            taxFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', updateTaxPreview);
+                    field.addEventListener('change', updateTaxPreview);
+                }
+            });
+
+            // Initial tax preview update
+            updateTaxPreview();
 
             // Add hover effects to all buttons
             const buttons = document.querySelectorAll('button[type="submit"], #changePasswordBtn, #verifySettingsCodeBtn, #resendSettingsCodeBtn, #saveNewPasswordBtn, #savePOSSettingsBtn');
@@ -7612,10 +8402,69 @@ button#menuToggle,
             });
 
             // Load saved POS settings
+            const savedPosSettings = localStorage.getItem('posSettings');
             const savedPrinter = localStorage.getItem('printerName');
             const savedCurrency = localStorage.getItem('currencySymbol');
-            if (savedPrinter) document.getElementById('printerName').value = savedPrinter;
-            if (savedCurrency) document.getElementById('currencySymbol').value = savedCurrency;
+            
+            if (savedPosSettings) {
+                try {
+                    const settings = JSON.parse(savedPosSettings);
+                    
+                    // Business Information (optional - may not exist)
+                    if (settings.storeName && document.getElementById('posStoreName')) document.getElementById('posStoreName').value = settings.storeName;
+                    if (settings.storeAddress && document.getElementById('posStoreAddress')) document.getElementById('posStoreAddress').value = settings.storeAddress;
+                    if (settings.storePhone && document.getElementById('posStorePhone')) document.getElementById('posStorePhone').value = settings.storePhone;
+                    if (settings.storeEmail && document.getElementById('posStoreEmail')) document.getElementById('posStoreEmail').value = settings.storeEmail;
+                    if (settings.storeTaxId && document.getElementById('posStoreTaxId')) document.getElementById('posStoreTaxId').value = settings.storeTaxId;
+                    
+                    // Tax Configuration (optional - may not exist)
+                    if (document.getElementById('posTaxEnabled')) document.getElementById('posTaxEnabled').checked = settings.taxEnabled || false;
+                    if (settings.taxName && document.getElementById('posTaxName')) document.getElementById('posTaxName').value = settings.taxName;
+                    if (settings.taxRate && document.getElementById('posTaxRate')) document.getElementById('posTaxRate').value = settings.taxRate;
+                    if (settings.taxType && document.getElementById('posTaxType')) document.getElementById('posTaxType').value = settings.taxType;
+                    
+                    // Receipt Configuration (optional - may not exist)
+                    if (settings.receiptHeader && document.getElementById('posReceiptHeader')) document.getElementById('posReceiptHeader').value = settings.receiptHeader;
+                    if (settings.receiptFooter && document.getElementById('posReceiptFooter')) document.getElementById('posReceiptFooter').value = settings.receiptFooter;
+                    if (settings.receiptWidth && document.getElementById('posReceiptWidth')) document.getElementById('posReceiptWidth').value = settings.receiptWidth;
+                    if (document.getElementById('posAutoPrint')) document.getElementById('posAutoPrint').checked = settings.autoPrint || false;
+                    if (document.getElementById('posShowLogo')) document.getElementById('posShowLogo').checked = settings.showLogo !== false; // default true
+                    
+                    // Printer Settings (optional - may not exist)
+                    if (settings.printerName && document.getElementById('printerName')) document.getElementById('printerName').value = settings.printerName;
+                    if (settings.printCopies && document.getElementById('posPrintCopies')) document.getElementById('posPrintCopies').value = settings.printCopies;
+                    
+                    // Currency & Format
+                    if (settings.currencySymbol) document.getElementById('currencySymbol').value = settings.currencySymbol;
+                    if (settings.currencyPosition) document.getElementById('posCurrencyPosition').value = settings.currencyPosition;
+                    if (settings.decimalPlaces) document.getElementById('posDecimalPlaces').value = settings.decimalPlaces;
+                    if (settings.thousandSeparator !== undefined) document.getElementById('posThousandSeparator').value = settings.thousandSeparator;
+                    
+                    // Inventory Settings
+                    if (settings.lowStockThreshold) document.getElementById('posLowStockThreshold').value = settings.lowStockThreshold;
+                    document.getElementById('posTrackInventory').checked = settings.trackInventory !== false; // default true
+                    document.getElementById('posAllowNegativeStock').checked = settings.allowNegativeStock || false;
+                    
+                    // Sales Settings
+                    if (settings.salesPrefix) document.getElementById('posSalesPrefix').value = settings.salesPrefix;
+                    if (settings.defaultDiscount) document.getElementById('posDefaultDiscount').value = settings.defaultDiscount;
+                    if (settings.maxDiscount) document.getElementById('posMaxDiscount').value = settings.maxDiscount;
+                    
+                    // Payment Methods
+                    document.getElementById('posPaymentCash').checked = settings.paymentCash !== false; // default true
+                    document.getElementById('posPaymentCard').checked = settings.paymentCard !== false; // default true
+                    document.getElementById('posPaymentMobile').checked = settings.paymentMobile !== false; // default true
+                    document.getElementById('posPaymentBank').checked = settings.paymentBank || false;
+                } catch (e) {
+                    console.error('Error loading POS settings:', e);
+                }
+            } else {
+                // Load legacy settings if new format not available
+                if (savedPrinter) document.getElementById('printerName').value = savedPrinter;
+                if (savedCurrency) document.getElementById('currencySymbol').value = savedCurrency;
+            }
+
+            }
 
             // Add smooth page fade-in animation to container
             const container = document.querySelector('.panel');
