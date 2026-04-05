@@ -74,4 +74,11 @@ export class ProductsController {
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);
   }
+
+  @Post('reset-all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  resetAll() {
+    return this.productsService.resetAll();
+  }
 }

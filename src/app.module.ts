@@ -7,6 +7,9 @@ import { SalesModule } from './sales/sales.module';
 import { StaffModule } from './staff/staff.module';
 import { EmailModule } from './email/email.module';
 import { ChatModule } from './chat/chat.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { StatisticsModule } from './statistics/statistics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -33,6 +36,9 @@ import { AppService } from './app.service';
     SalesModule,
     StaffModule,
     ChatModule,
+    AnalyticsModule,
+    ExpensesModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -123,7 +123,12 @@ export class SalesService {
 
     const todayRevenue = todaySales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
 
+    const recentSalesWhere: any = {};
+    if (startDate) {
+      recentSalesWhere.createdAt = Between(startDate, endDate ?? new Date());
+    }
     const recentSales = await this.saleRepository.find({
+      where: recentSalesWhere,
       relations: ['user'],
       order: { createdAt: 'DESC' },
       take: 10,
@@ -140,6 +145,25 @@ export class SalesService {
   }
 
   async getDailyRevenue(days: number = 14): Promise<any[]> {
+    const toLocalDateKey = (dateValue: Date): string => {
+      const y = dateValue.getFullYear();
+      const m = String(dateValue.getMonth() + 1).padStart(2, '0');
+      const d = String(dateValue.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    const normalizeDateKey = (value: unknown): string => {
+      if (typeof value === 'string') {
+        return value.slice(0, 10);
+      }
+      if (value instanceof Date) {
+        return toLocalDateKey(value);
+      }
+
+      const parsed = new Date(String(value || ''));
+      return Number.isNaN(parsed.getTime()) ? '' : toLocalDateKey(parsed);
+    };
+
     const since = new Date();
     since.setDate(since.getDate() - (days - 1));
     since.setHours(0, 0, 0, 0);
@@ -158,14 +182,14 @@ export class SalesService {
       .getRawMany();
 
     // Fill missing days with 0, ensuring today is always included
-    const map = new Map(results.map(r => [r.date, r]));
+    const map = new Map(results.map((r) => [normalizeDateKey(r.date), r]));
     const filled: any[] = [];
     const today = new Date();
     
     for (let i = 0; i < days; i++) {
       const d = new Date(since);
       d.setDate(d.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
+      const key = toLocalDateKey(d);
       const entry = map.get(key);
       filled.push({
         date: key,
@@ -177,8 +201,8 @@ export class SalesService {
     return filled;
   }
 
-  async getTopStaff(limit: number = 5): Promise<any[]> {
-    const results = await this.saleRepository
+  async getTopStaff(limit: number = 5, startDate?: Date): Promise<any[]> {
+    let qb = this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.user', 'user')
       .select('sale.user_id', 'userId')
@@ -190,24 +214,33 @@ export class SalesService {
       .addGroupBy('user.name')
       .addGroupBy('user.profilePic')
       .orderBy('totalRevenue', 'DESC')
-      .limit(limit)
-      .getRawMany();
+      .limit(limit);
 
-    return results;
+    if (startDate) {
+      qb = qb.andWhere('sale.createdAt >= :startDate', { startDate });
+    }
+
+    return qb.getRawMany();
   }
 
-  async getSalesByCategory(): Promise<any[]> {
-    const results = await this.saleItemRepository
+  async getSalesByCategory(startDate?: Date): Promise<any[]> {
+    let qb = this.saleItemRepository
       .createQueryBuilder('saleItem')
       .leftJoin('saleItem.product', 'product')
+      .leftJoin('saleItem.sale', 'sale')
       .select('product.category', 'category')
       .addSelect('SUM(saleItem.quantity)', 'totalQuantity')
       .addSelect('SUM(saleItem.subtotal)', 'totalRevenue')
       .addSelect('COUNT(DISTINCT saleItem.saleId)', 'totalTransactions')
       .where('product.category IS NOT NULL AND product.category != :empty', { empty: '' })
       .groupBy('product.category')
-      .orderBy('totalRevenue', 'DESC')
-      .getRawMany();
+      .orderBy('totalRevenue', 'DESC');
+
+    if (startDate) {
+      qb = qb.andWhere('sale.createdAt >= :startDate', { startDate });
+    }
+
+    const results = await qb.getRawMany();
 
     return results.map(r => ({
       category: r.category || 'Uncategorized',
@@ -290,5 +323,12 @@ export class SalesService {
       revenue: Number(r.totalRevenue) || 0,
       transactions: Number(r.totalTransactions) || 0,
     }));
+  }
+
+  async resetAll(): Promise<{ success: boolean; message: string }> {
+    // Delete sale_items first (FK constraint), then sales
+    await this.saleItemRepository.createQueryBuilder().delete().execute();
+    await this.saleRepository.createQueryBuilder().delete().execute();
+    return { success: true, message: 'All sales and transaction records have been deleted.' };
   }
 }

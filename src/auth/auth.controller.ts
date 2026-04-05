@@ -10,6 +10,45 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyResetCodeDto } from './dto/verify-reset-code.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+const allowedImageMimeToExt: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+};
+
+const dangerousUploadPattern = /\.(exe|bat|cmd|com|scr|pif|js|jse|vbs|vbe|wsf|wsh|ps1|msi|dll|jar|hta|sh|php|asp|aspx|jsp|py|rb)(\.|$)/i;
+
+type UploadValidationFile = {
+  originalname: string;
+  mimetype: string;
+};
+
+function sanitizeAndValidateImageUpload(file: UploadValidationFile): string {
+  const originalName = (file.originalname || '').toLowerCase();
+
+  if (originalName.includes('\0')) {
+    throw new Error('Invalid filename');
+  }
+
+  if (dangerousUploadPattern.test(originalName)) {
+    throw new Error('Unsafe file type detected');
+  }
+
+  const mappedExtension = allowedImageMimeToExt[file.mimetype?.toLowerCase() || ''];
+  const incomingExtension = extname(originalName);
+
+  if (!mappedExtension) {
+    throw new Error('Invalid file MIME type');
+  }
+
+  if (incomingExtension !== mappedExtension && !(mappedExtension === '.jpg' && incomingExtension === '.jpeg')) {
+    throw new Error('File extension does not match MIME type');
+  }
+
+  return mappedExtension;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -20,19 +59,15 @@ export class AuthController {
       destination: './uploads/profiles',
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
+        const ext = allowedImageMimeToExt[file.mimetype?.toLowerCase() || ''] || extname(file.originalname).toLowerCase();
         callback(null, `${uniqueSuffix}${ext}`);
       }
     }),
     fileFilter: (req, file, callback) => {
-      // 🔐 Security: Validate MIME type
-      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-      if (!allowedMimes.includes(file.mimetype)) {
-        return callback(new Error('Invalid file type. Only JPEG, PNG, GIF allowed'), false);
-      }
-      // 🔐 Security: Validate extension
-      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        return callback(new Error('Invalid file extension'), false);
+      try {
+        sanitizeAndValidateImageUpload(file);
+      } catch (error) {
+        return callback(error as Error, false);
       }
       callback(null, true);
     },
@@ -91,13 +126,15 @@ export class AuthController {
       destination: './uploads/profiles',
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
+        const ext = allowedImageMimeToExt[file.mimetype?.toLowerCase() || ''] || extname(file.originalname).toLowerCase();
         callback(null, `${uniqueSuffix}${ext}`);
       }
     }),
     fileFilter: (req, file, callback) => {
-      if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
+      try {
+        sanitizeAndValidateImageUpload(file);
+      } catch (error) {
+        return callback(error as Error, false);
       }
       callback(null, true);
     },

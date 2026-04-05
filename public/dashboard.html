@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;">
     <title>BluePOS | Complete Point of Sale System</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <script src="/chart.js"></script>
+    <script src="/vendor/jspdf/jspdf.umd.min.js"></script>
+    <script src="/vendor/html2pdf/html2pdf.bundle.min.js"></script>
     <style>
        * {
     margin: 0;
@@ -2623,12 +2626,12 @@ input[type="radio"]:focus {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(2, 6, 23, 0.78);
     backdrop-filter: blur(4px);
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 60;
+    z-index: 1000001;
     opacity: 0;
     transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     padding: 16px;
@@ -2664,6 +2667,22 @@ input[type="radio"]:focus {
     opacity: 1;
 }
 
+/* Keep product category dropdown visible outside the modal body */
+#productModal .modal-card,
+#productModal .modal-form,
+#productModal .modal-field,
+#productModal .custom-select-wrapper {
+    overflow: visible;
+}
+
+#productModal .custom-select-wrapper {
+    z-index: 1000003;
+}
+
+#productModal .custom-select-dropdown {
+    z-index: 1000004;
+}
+
 .modal-header {
     padding: 16px 18px;
     border-bottom: 1px solid var(--border);
@@ -2671,6 +2690,7 @@ input[type="radio"]:focus {
     align-items: center;
     justify-content: space-between;
     background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    border-radius: 20px 20px 0 0;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -2686,14 +2706,14 @@ input[type="radio"]:focus {
     background: transparent;
     border: none;
     font-size: 20px;
-    color: var(--text-light);
+    color: #6b7280 !important;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .modal-close:hover {
     transform: rotate(90deg);
-    color: var(--danger);
+    color: #4b5563 !important;
 }
 
 .modal-form {
@@ -3810,6 +3830,18 @@ input[type="radio"]:focus {
         flex-direction: row !important;
         align-items: flex-start !important;
     }
+    .profile-card,
+    .security-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .account-card-header {
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 }
 
 /* Mobile Profile Header - Professional Centered Design */
@@ -4087,6 +4119,14 @@ button#menuToggle,
                     <span><i class="fas fa-chart-bar"></i></span>
                     <span>Reports</span>
                 </div>
+                <div class="nav-item" data-page="expenses">
+                    <span><i class="fas fa-wallet"></i></span>
+                    <span>Other Expenses</span>
+                </div>
+                <div class="nav-item" data-page="statistics">
+                    <span><i class="fas fa-globe"></i></span>
+                    <span>Statistics</span>
+                </div>
                 <div class="nav-item" data-page="settings">
                     <span><i class="fas fa-cog"></i></span>
                     <span>Settings</span>
@@ -4118,6 +4158,9 @@ button#menuToggle,
                             </div>
                         </div>
                     </div>
+                    <button id="aiGuideBtn" type="button" title="AI guide" aria-label="Open AI assistant" style="margin-left: 12px; border: none; border-radius: 10px; padding: 10px 12px; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); color: #fff; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);">
+                        <i class="fas fa-robot"></i>
+                    </button>
                 </div>
             </div>
             <div class="page-container" id="pageContent">
@@ -4127,7 +4170,7 @@ button#menuToggle,
     </div>
 
     <div class="modal-backdrop" id="productModal">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="productModalTitle" style="max-width: 640px;">
             <div class="modal-header">
                 <h3 class="modal-title" id="productModalTitle">Add Product</h3>
                 <button class="modal-close" id="closeProductModal" type="button">✕</button>
@@ -4156,7 +4199,19 @@ button#menuToggle,
                 </div>
                 <div class="modal-field">
                     <label for="productCategory">Category</label>
-                    <input id="productCategory" name="category" type="text" />
+                    <input id="productCategory" name="category" type="hidden" />
+                    <div class="custom-select-wrapper" style="width:100%; min-width:100%;">
+                        <button class="custom-select-button" id="productCategorySelectBtn" type="button" style="width:100%;">
+                            <span id="productCategoryDisplay">Select category</span>
+                            <span style="font-size: 18px;"><i class="fas fa-chevron-down"></i></span>
+                        </button>
+                        <div class="custom-select-dropdown" id="productCategoryDropdown" style="z-index: 1000002;">
+                            <input type="text" class="custom-select-search" id="productCategorySearch" placeholder="Search category..." />
+                            <div class="custom-select-options" id="productCategoryOptions">
+                                <div class="custom-select-option" data-value="">Select category</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" id="cancelProductModal">Cancel</button>
@@ -4182,6 +4237,30 @@ button#menuToggle,
                     <button type="submit" class="btn-modal-primary" id="verifyInventoryAccessBtn">Verify</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="aiGuideModal">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="aiGuideTitle" style="max-width: 680px; width: 95%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); border-radius: 14px 14px 0 0; color: #ffffff !important;">
+                <h3 class="modal-title" id="aiGuideTitle" style="color: #ffffff !important;">AI Chat Assistant</h3>
+                <button class="modal-close" id="closeAiGuideModal" type="button" style="color: #6b7280 !important;">✕</button>
+            </div>
+            <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 13px; color: #475569;">Ask anything about BluePOS. You can ask about revenue today, top cashier, top products, low stock, reports, and other app tasks.</div>
+                <div id="aiGuideOutput" style="min-height: 180px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #f8fafc; color: #334155; overflow-y: auto; max-height: 360px; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="align-self: flex-start; max-width: 92%; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px 12px; color: #0c4a6e; line-height: 1.45;">
+                        Hello. You can ask me things like: what is today\'s revenue, who is the top cashier, what products are low stock, or how to use a feature in this POS app.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <textarea id="aiGuideInput" rows="2" placeholder="Type your question..." style="flex: 1; resize: vertical; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; font-size: 14px; outline: none;"></textarea>
+                    <button id="aiGuideSendBtn" type="button" class="btn-modal-primary" style="width: auto; padding: 10px 16px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); white-space: nowrap;">
+                        <i class="fas fa-paper-plane"></i>
+                        Send
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -4330,14 +4409,30 @@ button#menuToggle,
         let inventoryChart = null;
         let salesTrendChart = null;
         let dailyRevenueChart = null;
+        let expensesTrendChart = null;
         let categoryChart = null;
         let categoryInventoryChart = null;
+        let statisticsSoldChart = null;
+        let statisticsExpensesRevenueChart = null;
         let reportPrintStats = null;
         let reportPrintRows = [];
+        let reportAllRows = [];
+        let reportDateFrom = '';
+        let reportDateTo = '';
+        let reportDefaultDateFrom = '';
+        let reportDefaultDateTo = '';
+        let productCategoryOptions = [];
+        let filteredProductCategoryOptions = [];
         let currentPage = 'dashboard';
         let notificationAdjustments = {};
         const productModal = document.getElementById('productModal');
         const productForm = document.getElementById('productForm');
+        const productCategoryInput = document.getElementById('productCategory');
+        const productCategorySelectBtn = document.getElementById('productCategorySelectBtn');
+        const productCategoryDisplay = document.getElementById('productCategoryDisplay');
+        const productCategoryDropdown = document.getElementById('productCategoryDropdown');
+        const productCategoryOptionsEl = document.getElementById('productCategoryOptions');
+        const productCategorySearch = document.getElementById('productCategorySearch');
         const saveProductBtn = document.getElementById('saveProductBtn');
         const productModalTitle = document.getElementById('productModalTitle');
         const inventoryAccessModal = document.getElementById('inventoryAccessModal');
@@ -4353,6 +4448,13 @@ button#menuToggle,
         const notifBadge = document.getElementById('notifBadge');
         const notifPanel = document.getElementById('notifPanel');
         const notifWrap = document.getElementById('notifWrap');
+        const aiGuideBtn = document.getElementById('aiGuideBtn');
+        const aiGuideModal = document.getElementById('aiGuideModal');
+        const closeAiGuideModal = document.getElementById('closeAiGuideModal');
+        const aiGuideInput = document.getElementById('aiGuideInput');
+        const aiGuideSendBtn = document.getElementById('aiGuideSendBtn');
+        const aiGuideOutput = document.getElementById('aiGuideOutput');
+        let aiConversation = [];
         const loginSidebarAvatar = document.getElementById('loginSidebarAvatar');
         const loginSidebarName = document.getElementById('loginSidebarName');
         const loginSidebarRole = document.getElementById('loginSidebarRole');
@@ -4438,6 +4540,198 @@ button#menuToggle,
             return [];
         }
 
+        function openAiGuideModal() {
+            if (!aiGuideModal) return;
+            aiGuideModal.classList.add('active');
+            requestAnimationFrame(() => aiGuideModal.classList.add('show'));
+            if (aiGuideInput) {
+                aiGuideInput.focus();
+            }
+        }
+
+        function closeAiGuideModalFn() {
+            if (!aiGuideModal) return;
+            aiGuideModal.classList.remove('show');
+            setTimeout(() => aiGuideModal.classList.remove('active'), 220);
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function createAiChatBubble(role, provider = '') {
+            if (!aiGuideOutput) return;
+
+            const isUser = role === 'user';
+            const bubble = document.createElement('div');
+            bubble.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
+            bubble.style.maxWidth = '92%';
+            bubble.style.borderRadius = '10px';
+            bubble.style.padding = '10px 12px';
+            bubble.style.lineHeight = '1.45';
+            bubble.style.whiteSpace = 'pre-wrap';
+            bubble.style.wordBreak = 'break-word';
+            bubble.style.background = isUser ? '#dbeafe' : '#e0f2fe';
+            bubble.style.border = isUser ? '1px solid #bfdbfe' : '1px solid #bae6fd';
+            bubble.style.color = isUser ? '#1e3a8a' : '#0c4a6e';
+
+            const content = document.createElement('div');
+            content.style.whiteSpace = 'pre-wrap';
+            content.style.wordBreak = 'break-word';
+            bubble.appendChild(content);
+
+            if (!isUser && provider) {
+                const providerLabel = document.createElement('div');
+                providerLabel.style.fontSize = '11px';
+                providerLabel.style.opacity = '0.75';
+                providerLabel.style.marginTop = '6px';
+                providerLabel.textContent = `Source: ${provider}`;
+                bubble.appendChild(providerLabel);
+            }
+
+            aiGuideOutput.appendChild(bubble);
+            aiGuideOutput.scrollTop = aiGuideOutput.scrollHeight;
+
+            return { bubble, content };
+        }
+
+        function appendAiChatBubble(role, text, provider = '') {
+            const bubbleParts = createAiChatBubble(role, provider);
+            if (!bubbleParts) return;
+
+            bubbleParts.content.textContent = text;
+        }
+
+        function appendAiTypingBubble() {
+            const bubbleParts = createAiChatBubble('assistant');
+            if (!bubbleParts) return null;
+
+            let frame = 0;
+            bubbleParts.content.textContent = 'Thinking';
+            const intervalId = setInterval(() => {
+                frame = (frame + 1) % 4;
+                bubbleParts.content.textContent = `Thinking${'.'.repeat(frame)}`;
+                if (aiGuideOutput) {
+                    aiGuideOutput.scrollTop = aiGuideOutput.scrollHeight;
+                }
+            }, 350);
+
+            return {
+                ...bubbleParts,
+                stop: () => clearInterval(intervalId),
+            };
+        }
+
+        async function typeAiBubbleText(contentEl, text) {
+            const fullText = String(text || '');
+            const step = fullText.length > 420 ? 4 : fullText.length > 220 ? 3 : 2;
+
+            for (let index = 0; index <= fullText.length; index += step) {
+                contentEl.textContent = fullText.slice(0, index);
+                if (aiGuideOutput) {
+                    aiGuideOutput.scrollTop = aiGuideOutput.scrollHeight;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 14));
+            }
+
+            contentEl.textContent = fullText;
+        }
+
+        async function requestAiGuide() {
+            const message = (aiGuideInput?.value || '').trim();
+            if (!message) {
+                showErrorNotification('Please enter a message for AI assistant.');
+                return;
+            }
+
+            if (aiGuideInput) {
+                aiGuideInput.value = '';
+            }
+
+            appendAiChatBubble('user', message);
+            aiConversation.push({ role: 'user', content: message });
+
+            if (aiGuideSendBtn) {
+                aiGuideSendBtn.disabled = true;
+                aiGuideSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+            }
+
+            const typingBubble = appendAiTypingBubble();
+
+            try {
+                const result = await apiCall('/chat/assistant', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        message,
+                        history: aiConversation.slice(-12),
+                    }),
+                });
+
+                const reply = result?.data?.reply || 'I could not generate a response right now.';
+                const provider = result?.data?.provider || 'assistant';
+
+                if (typingBubble) {
+                    typingBubble.stop();
+                    if (typingBubble.bubble.parentNode) {
+                        typingBubble.bubble.parentNode.removeChild(typingBubble.bubble);
+                    }
+                }
+
+                const assistantBubble = createAiChatBubble('assistant', provider);
+                if (assistantBubble) {
+                    await typeAiBubbleText(assistantBubble.content, reply);
+                }
+                aiConversation.push({ role: 'assistant', content: reply });
+            } catch (error) {
+                if (typingBubble) {
+                    typingBubble.stop();
+                    if (typingBubble.bubble.parentNode) {
+                        typingBubble.bubble.parentNode.removeChild(typingBubble.bubble);
+                    }
+                }
+                appendAiChatBubble('assistant', error?.message || 'I ran into an error while replying. Please try again.');
+            } finally {
+                if (aiGuideSendBtn) {
+                    aiGuideSendBtn.disabled = false;
+                    aiGuideSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+                }
+            }
+        }
+
+        if (aiGuideBtn) {
+            aiGuideBtn.addEventListener('click', openAiGuideModal);
+        }
+
+        if (closeAiGuideModal) {
+            closeAiGuideModal.addEventListener('click', closeAiGuideModalFn);
+        }
+
+        if (aiGuideSendBtn) {
+            aiGuideSendBtn.addEventListener('click', requestAiGuide);
+        }
+
+        if (aiGuideInput) {
+            aiGuideInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    requestAiGuide();
+                }
+            });
+        }
+
+        if (aiGuideModal) {
+            aiGuideModal.addEventListener('click', (event) => {
+                if (event.target === aiGuideModal) {
+                    closeAiGuideModalFn();
+                }
+            });
+        }
+
         // Helper function to get POS settings
         function getPOSSettings() {
             const savedSettings = localStorage.getItem('posSettings');
@@ -4490,6 +4784,24 @@ button#menuToggle,
             if (legacyCurrency) defaultSettings.currencySymbol = legacyCurrency;
             
             return defaultSettings;
+        }
+
+        function getLocalDateKey(dateValue = new Date()) {
+            const year = dateValue.getFullYear();
+            const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+            const day = String(dateValue.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getResetDateKey() {
+            return localStorage.getItem('posResetDate') || getLocalDateKey();
+        }
+
+        function getResetDateLabel() {
+            const parsed = new Date(`${getResetDateKey()}T00:00:00`);
+            return Number.isNaN(parsed.getTime())
+                ? 'Today'
+                : parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         }
 
         function formatCurrency(value) {
@@ -5435,6 +5747,10 @@ button#menuToggle,
 
             // Update all text labels and headings - FORCE WHITE IN DARK MODE
             document.querySelectorAll('label, h1, h2, h3, h4, h5, h6, p, span, a, div, tr, td, th').forEach(el => {
+                if (el.closest('#aiGuideModal .modal-header')) {
+                    return;
+                }
+
                 if (selectedTheme === 'dark') {
                     el.style.color = '#ffffff';
                 } else {
@@ -5463,6 +5779,10 @@ button#menuToggle,
 
             // Update buttons - FORCE WHITE TEXT IN BOTH LIGHT AND DARK MODE
             document.querySelectorAll('button').forEach(btn => {
+                if (btn.classList.contains('modal-close')) {
+                    btn.style.color = '#6b7280';
+                    return;
+                }
                 btn.style.color = '#ffffff';
             });
 
@@ -5544,6 +5864,102 @@ button#menuToggle,
             }
         });
 
+        function renderProductCategoryOptions(selectedValue = '') {
+            if (!productCategoryOptionsEl) return;
+
+            const options = Array.isArray(filteredProductCategoryOptions)
+                ? filteredProductCategoryOptions
+                : [];
+
+            const typedCategory = String(productCategorySearch?.value || '').trim();
+            const hasTypedCategoryMatch = typedCategory
+                ? productCategoryOptions.some((category) => category.toLowerCase() === typedCategory.toLowerCase())
+                : false;
+            const typedCategoryOption = typedCategory && !hasTypedCategoryMatch
+                ? `<div class="custom-select-option" data-value="${escapeHtml(typedCategory)}" data-create="true">Use "${escapeHtml(typedCategory)}"</div>`
+                : '';
+
+            productCategoryOptionsEl.innerHTML = `
+                <div class="custom-select-option" data-value="">Select category</div>
+                ${options.map((category) => `<div class="custom-select-option" data-value="${escapeHtml(category)}">${escapeHtml(category)}</div>`).join('')}
+                ${typedCategoryOption}
+            `;
+
+            const selected = String(selectedValue || '').trim();
+            if (productCategoryInput) {
+                productCategoryInput.value = selected;
+            }
+            if (productCategoryDisplay) {
+                productCategoryDisplay.textContent = selected || 'Select category';
+            }
+        }
+
+        if (productCategorySelectBtn && productCategoryDropdown) {
+            productCategorySelectBtn.addEventListener('click', () => {
+                productCategoryDropdown.classList.toggle('show');
+                if (productCategoryDropdown.classList.contains('show') && productCategorySearch) {
+                    productCategorySearch.focus();
+                }
+            });
+        }
+
+        if (productCategorySearch) {
+            productCategorySearch.addEventListener('input', () => {
+                const term = String(productCategorySearch.value || '').trim().toLowerCase();
+                const currentValue = String(productCategoryInput?.value || '');
+
+                filteredProductCategoryOptions = term
+                    ? productCategoryOptions.filter((category) => category.toLowerCase().includes(term))
+                    : [...productCategoryOptions];
+
+                renderProductCategoryOptions(currentValue);
+            });
+
+            productCategorySearch.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+
+                const typedCategory = String(productCategorySearch.value || '').trim();
+                if (!typedCategory) return;
+
+                event.preventDefault();
+
+                if (productCategoryInput) {
+                    productCategoryInput.value = typedCategory;
+                }
+                if (productCategoryDisplay) {
+                    productCategoryDisplay.textContent = typedCategory;
+                }
+                if (productCategoryDropdown) {
+                    productCategoryDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        if (productCategoryOptionsEl) {
+            productCategoryOptionsEl.addEventListener('click', (event) => {
+                const option = event.target.closest('.custom-select-option');
+                if (!option) return;
+
+                const value = String(option.getAttribute('data-value') || '');
+                if (productCategoryInput) {
+                    productCategoryInput.value = value;
+                }
+                if (productCategoryDisplay) {
+                    productCategoryDisplay.textContent = value || 'Select category';
+                }
+                if (productCategoryDropdown) {
+                    productCategoryDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        document.addEventListener('click', (event) => {
+            const wrapper = productCategorySelectBtn?.closest('.custom-select-wrapper');
+            if (wrapper && !wrapper.contains(event.target) && productCategoryDropdown) {
+                productCategoryDropdown.classList.remove('show');
+            }
+        });
+
         function openProductModal(mode = 'create', product = null) {
             productForm.reset();
             document.getElementById('productId').value = product?.id || '';
@@ -5555,7 +5971,14 @@ button#menuToggle,
             document.getElementById('productCost').value = product?.cost_price ?? 0;
             document.getElementById('productStock').value = product?.stock_quantity ?? 0;
             document.getElementById('productMinStock').value = product?.min_stock_level ?? 5;
-            document.getElementById('productCategory').value = product?.category || '';
+            if (productCategorySearch) {
+                productCategorySearch.value = '';
+            }
+            filteredProductCategoryOptions = [...productCategoryOptions];
+            renderProductCategoryOptions(product?.category || '');
+            if (productCategoryDropdown) {
+                productCategoryDropdown.classList.remove('show');
+            }
 
             productForm.dataset.mode = mode;
             productModal.classList.add('active');
@@ -5580,9 +6003,11 @@ button#menuToggle,
             e.preventDefault();
 
             const formData = new FormData(productForm);
+            const selectedCategory = String(formData.get('category') || '').trim();
+            const typedCategory = String(productCategorySearch?.value || '').trim();
             const payload = {
                 name: String(formData.get('name') || '').trim(),
-                category: String(formData.get('category') || '').trim() || undefined,
+                category: selectedCategory || typedCategory || undefined,
                 price: Number(formData.get('price') || 0),
                 cost_price: Number(formData.get('cost_price') || 0),
                 stock_quantity: Number(formData.get('stock_quantity') || 0),
@@ -5738,7 +6163,7 @@ button#menuToggle,
 
             const pageContent = document.getElementById('pageContent');
             pageContent.classList.add('loading');
-            const pageNames = { staff: 'Cashier', pos: 'POS Counter' };
+            const pageNames = { staff: 'Cashier', pos: 'POS Counter', statistics: 'Statistics', expenses: 'Other Expenses' };
             document.getElementById('pageTitle').innerText = pageNames[page] || page.charAt(0).toUpperCase() + page.slice(1);
             await new Promise(resolve => setTimeout(resolve, 150));
             
@@ -5761,6 +6186,12 @@ button#menuToggle,
                 case 'reports':
                     await loadReports();
                     break;
+                case 'expenses':
+                    await loadExpenses();
+                    break;
+                case 'statistics':
+                    await loadStatistics();
+                    break;
                 case 'settings':
                     await loadSettings();
                     break;
@@ -5774,18 +6205,23 @@ button#menuToggle,
 
         // Dashboard
         async function loadDashboard() {
-            const [productsStats, salesStats, topStaff, dailyRevenue] = await Promise.all([
+            const [productsStats, salesStats, expensesSummary] = await Promise.all([
                 apiCall('/products/stats', { redirectOnUnauthorized: false }),
                 apiCall('/sales/stats', { redirectOnUnauthorized: false }),
-                apiCall('/sales/top-staff', { redirectOnUnauthorized: false }),
-                apiCall('/sales/daily-revenue', { redirectOnUnauthorized: false })
+                apiCall('/expenses/summary?limit=6', { redirectOnUnauthorized: false })
             ]);
 
-            const topStaffList = Array.isArray(topStaff) ? topStaff : [];
-            const dailyData = Array.isArray(dailyRevenue) ? dailyRevenue : [];
+            const recentExpenses = Array.isArray(expensesSummary?.recentExpenses) ? expensesSummary.recentExpenses : [];
+            const totalExpenses = Number(expensesSummary?.totalExpenses || 0);
+            const netIncome = Number(expensesSummary?.netIncome || 0);
+
 
             const html = `
                 <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Net Income</div>
+                        <div class="stat-value" style="color:${netIncome < 0 ? '#dc2626' : '#059669'};">${formatCurrency(netIncome)}</div>
+                    </div>
                     <div class="stat-card">
                         <div class="stat-title">Total Revenue</div>
                         <div class="stat-value">${formatCurrency(salesStats.totalRevenue)}</div>
@@ -5798,10 +6234,6 @@ button#menuToggle,
                         <div class="stat-title">Total Products</div>
                         <div class="stat-value">${productsStats.totalProducts || 0}</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-title">Low Stock Items</div>
-                        <div class="stat-value">${productsStats.lowStockCount || 0}</div>
-                    </div>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -5812,18 +6244,19 @@ button#menuToggle,
                         <div class="stat-title">Items Sold</div>
                         <div class="stat-value">${salesStats.totalItems || 0}</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Expenses</div>
+                        <div class="stat-value">${formatCurrency(totalExpenses)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Low Stock Items</div>
+                        <div class="stat-value">${productsStats.lowStockCount || 0}</div>
+                    </div>
                 </div>
                 <div class="panel" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 10px;">Revenue Trend (Recent)</h3>
                     <div style="height: 250px;">
                         <canvas id="salesTrendChart"></canvas>
-                    </div>
-                </div>
-                <div class="panel" style="margin-bottom: 20px;">
-                    <h3 style="margin-bottom: 4px;">📊 Daily Revenue (24-Hour Totals by Date)</h3>
-                    <p style="font-size: 12px; color: var(--text-light); margin: 0 0 12px 0;">Complete daily revenue breakdown showing exact dates with trend data</p>
-                    <div style="height: 280px;">
-                        <canvas id="dailyRevenueChart"></canvas>
                     </div>
                 </div>
                 <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
@@ -5837,42 +6270,6 @@ button#menuToggle,
                         <h3 style="margin-bottom: 14px;">📦 Stock Inventory by Category</h3>
                         <div style="height: 300px;">
                             <canvas id="categoryInventoryChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="panel" style="margin-bottom: 20px;">
-                    <h3 style="margin-bottom: 14px;">🏆 Top Selling Cashier</h3>
-                    ${topStaffList.length === 0 ? '<p style="color:var(--text-light);font-size:14px;">No sales data yet.</p>' : `
-                    <ul class="leaderboard-list">
-                        ${topStaffList.map((s, i) => {
-                            const avatarSrc = s.profilePic ? resolveProfileImage(s.profilePic, s.updatedAt) : '';
-                            const avatarHtml = avatarSrc
-                                ? '<img class="leaderboard-avatar" src="' + avatarSrc + '" alt="' + (s.name || 'user').replace(/"/g, '&quot;') + '" title="' + (s.name || 'user').replace(/"/g, '&quot;') + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><span class="leaderboard-avatar initials-only" style="display:none;">' + (s.name || '?').charAt(0).toUpperCase() + '</span>'
-                                : '<span class="leaderboard-avatar initials-only">' + (s.name || '?').charAt(0).toUpperCase() + '</span>';
-                            return '<li class="leaderboard-item" title="' + (s.name || 'Unknown').replace(/"/g, '&quot;') + '">' +
-                                '<span class="leaderboard-rank rank-' + (i + 1) + '">' + (i + 1) + '</span>' +
-                                avatarHtml +
-                                '<div class="leaderboard-info">' +
-                                    '<div class="leaderboard-name">' + (s.name || 'Unknown') + '</div>' +
-                                    '<div class="leaderboard-txn">' + (Number(s.totalTransactions) || 0) + ' transactions</div>' +
-                                '</div>' +
-                                '<div class="leaderboard-revenue">' + formatCurrency(Number(s.totalRevenue) || 0) + '</div>' +
-                            '</li>';
-                        }).join('')}
-                    </ul>
-                    `}
-                </div>
-                <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <div class="panel" style="flex: 1; min-width: 300px;">
-                        <h3 style="margin-bottom: 14px;">🛍️ Top Selling Products</h3>
-                        <div id="topProductsList">
-                            <p style="color:var(--text-light);font-size:14px;text-align:center;">Loading...</p>
-                        </div>
-                    </div>
-                    <div class="panel" style="flex: 1; min-width: 300px;">
-                        <h3 style="margin-bottom: 14px;">📂 Top Selling Categories</h3>
-                        <div id="topCategoriesList">
-                            <p style="color:var(--text-light);font-size:14px;text-align:center;">Loading...</p>
                         </div>
                     </div>
                 </div>
@@ -5892,6 +6289,8 @@ button#menuToggle,
                 .slice()
                 .reverse()
                 .map(s => Number(s.totalAmount || 0));
+            const salesChartLabels = labels.length ? labels : [getResetDateLabel()];
+            const salesChartValues = values.length ? values : [0];
 
             const chartEl = document.getElementById('salesTrendChart');
             if (chartEl) {
@@ -5901,10 +6300,10 @@ button#menuToggle,
                 salesTrendChart = new Chart(chartEl, {
                     type: 'line',
                     data: {
-                        labels,
+                        labels: salesChartLabels,
                         datasets: [{
                             label: 'Revenue',
-                            data: values,
+                            data: salesChartValues,
                             borderColor: '#2563eb',
                             backgroundColor: 'rgba(37, 99, 235, 0.14)',
                             borderWidth: 3,
@@ -5927,73 +6326,6 @@ button#menuToggle,
                         scales: {
                             x: { grid: { display: false } },
                             y: { grid: { color: 'rgba(100, 116, 139, 0.15)' } },
-                        },
-                    },
-                });
-            }
-
-            // Daily Revenue Bar Chart
-            const dailyChartEl = document.getElementById('dailyRevenueChart');
-            if (dailyChartEl) {
-                if (dailyRevenueChart) {
-                    dailyRevenueChart.destroy();
-                }
-                const dayLabels = dailyData.map(d => {
-                    const dt = new Date(d.date + 'T00:00:00');
-                    return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                });
-                const dayValues = dailyData.map(d => d.revenue);
-                const dayCounts = dailyData.map(d => d.count);
-
-                dailyRevenueChart = new Chart(dailyChartEl, {
-                    type: 'bar',
-                    data: {
-                        labels: dayLabels,
-                        datasets: [{
-                            label: 'Revenue',
-                            data: dayValues,
-                            backgroundColor: dayValues.map((v, i) => {
-                                const today = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                                return dayLabels[i] === today
-                                    ? 'rgba(99, 102, 241, 0.85)'
-                                    : 'rgba(99, 102, 241, 0.45)';
-                            }),
-                            borderColor: 'rgba(99, 102, 241, 0.9)',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                            borderSkipped: false,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart',
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => {
-                                        const idx = ctx.dataIndex;
-                                        return `Revenue: ${formatCurrency(dayValues[idx])} (${dayCounts[idx]} sales)`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { display: false },
-                                ticks: { font: { size: 10 } },
-                            },
-                            y: {
-                                grid: { color: 'rgba(100, 116, 139, 0.12)' },
-                                ticks: {
-                                    callback: (v) => formatCurrency(v),
-                                    font: { size: 11 },
-                                },
-                            },
                         },
                     },
                 });
@@ -6065,7 +6397,30 @@ button#menuToggle,
                             },
                         });
                     } else {
-                        categoryChartEl.parentElement.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:40px;">No category data available yet.</p>';
+                        categoryChart = new Chart(categoryChartEl, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['No Sales'],
+                                datasets: [{
+                                    data: [0],
+                                    backgroundColor: ['rgba(148, 163, 184, 0.55)'],
+                                    borderColor: 'white',
+                                    borderWidth: 2,
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: () => `Revenue: ${formatCurrency(0)}`,
+                                        },
+                                    },
+                                },
+                            },
+                        });
                     }
                 } catch (error) {
                     categoryChartEl.parentElement.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:40px;">Unable to load category data.</p>';
@@ -6147,82 +6502,31 @@ button#menuToggle,
                             },
                         });
                     } else {
-                        inventoryChartEl.parentElement.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:40px;">No inventory data available yet.</p>';
+                        categoryInventoryChart = new Chart(inventoryChartEl, {
+                            type: 'bar',
+                            data: {
+                                labels: [getResetDateLabel()],
+                                datasets: [{
+                                    label: 'Stock Quantity',
+                                    data: [0],
+                                    backgroundColor: ['rgba(148, 163, 184, 0.55)'],
+                                    borderColor: 'transparent',
+                                    borderWidth: 0,
+                                }],
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { beginAtZero: true },
+                                },
+                            },
+                        });
                     }
                 } catch (error) {
                     inventoryChartEl.parentElement.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:40px;">Unable to load inventory data.</p>';
-                }
-            }
-
-            // Top Selling Products
-            try {
-                const topProductsData = await apiCall('/sales/top-products?limit=5', { redirectOnUnauthorized: false });
-                const topProducts = Array.isArray(topProductsData) ? topProductsData : [];
-                const topProductsEl = document.getElementById('topProductsList');
-                
-                if (topProductsEl) {
-                    if (topProducts.length > 0) {
-                        topProductsEl.innerHTML = `
-                            <div style="display: flex; flex-direction: column; gap: 10px;">
-                                ${topProducts.map((p, i) => `
-                                    <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(59, 130, 246, 0.05); border-radius: 6px; border-left: 3px solid rgba(59, 130, 246, 0.8);">
-                                        <span class="top-rank-number" style="font-size: 16px; font-weight: 700; color: #ffffff !important; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 50%; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">${i + 1}</span>
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: 600; font-size: 13px; color: var(--text-dark);">${p.name}</div>
-                                            <div style="font-size: 11px; color: var(--text-light);">${p.category}</div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-weight: 700; color: var(--primary);">${p.quantity} sold</div>
-                                            <div style="font-size: 11px; color: var(--text-light);">${formatCurrency(p.revenue)}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                    } else {
-                        topProductsEl.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;">No sales data yet.</p>';
-                    }
-                }
-            } catch (error) {
-                const topProductsEl = document.getElementById('topProductsList');
-                if (topProductsEl) {
-                    topProductsEl.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;">Unable to load data.</p>';
-                }
-            }
-
-            // Top Selling Categories
-            try {
-                const topCategoriesData = await apiCall('/sales/top-categories?limit=5', { redirectOnUnauthorized: false });
-                const topCategories = Array.isArray(topCategoriesData) ? topCategoriesData : [];
-                const topCategoriesEl = document.getElementById('topCategoriesList');
-                
-                if (topCategoriesEl) {
-                    if (topCategories.length > 0) {
-                        topCategoriesEl.innerHTML = `
-                            <div style="display: flex; flex-direction: column; gap: 10px;">
-                                ${topCategories.map((c, i) => `
-                                    <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(34, 197, 94, 0.05); border-radius: 6px; border-left: 3px solid rgba(34, 197, 94, 0.8);">
-                                        <span class="top-rank-number" style="font-size: 16px; font-weight: 700; color: #ffffff !important; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 50%; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);">${i + 1}</span>
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: 600; font-size: 13px; color: var(--text-dark);">${c.category}</div>
-                                            <div style="font-size: 11px; color: var(--text-light);">${c.transactions} transactions</div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-weight: 700; color: var(--primary);">${c.quantity} items</div>
-                                            <div style="font-size: 11px; color: var(--text-light);">${formatCurrency(c.revenue)}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                    } else {
-                        topCategoriesEl.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;">No sales data yet.</p>';
-                    }
-                }
-            } catch (error) {
-                const topCategoriesEl = document.getElementById('topCategoriesList');
-                if (topCategoriesEl) {
-                    topCategoriesEl.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;">Unable to load data.</p>';
                 }
             }
 
@@ -6456,7 +6760,7 @@ button#menuToggle,
                 const grid = document.getElementById('productGrid');
                 const paginationEl = document.getElementById('posPagination');
                 if (!productState.length) {
-                    grid.innerHTML = '<div style="padding: 16px; color: var(--text-light); text-align: center;">No products available yet. Add products in Inventory to display them here.</div>';
+                    grid.innerHTML = '<div style="padding: 16px; color: var(--text-light); text-align: center;">No products yet.</div>';
                     if (paginationEl) paginationEl.innerHTML = '';
                     return;
                 }
@@ -6729,15 +7033,15 @@ button#menuToggle,
 
         // Products Management
         async function loadProducts() {
-            const [productsResponse, chartData] = await Promise.all([
-                apiCall('/products'),
-                apiCall('/products/inventory/chart?days=30')
-            ]);
+            const productsResponse = await apiCall('/products');
             const products = normalizeArrayResponse(productsResponse);
             const isAdmin = currentUser.userType === 'admin';
 
             // Extract unique categories
             const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+            productCategoryOptions = categories;
+            filteredProductCategoryOptions = [...productCategoryOptions];
+            renderProductCategoryOptions();
 
             let invSearch = '';
             let invCategory = '';
@@ -6888,13 +7192,6 @@ button#menuToggle,
                     <div class="inv-card-view" id="invCardView"></div>
                     <div class="pos-pagination" id="invPagination"></div>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 22px;">
-                    <div style="background: white; border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-                        <h3 style="margin-bottom: 10px;">📊 Daily Inventory Flow (Last 30 Days)</h3>
-                        <canvas id="inventoryChart" style="width: 100%; max-height: 280px;"></canvas>
-                    </div>
-
-                </div>
             `;
             document.getElementById('pageContent').innerHTML = html;
 
@@ -6954,85 +7251,9 @@ button#menuToggle,
 
             renderTable();
 
-            const chartCanvas = document.getElementById('inventoryChart');
-            if (chartCanvas) {
-                if (inventoryChart) {
-                    inventoryChart.destroy();
-                }
-                const ctx = chartCanvas.getContext('2d');
-                inventoryChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: (chartData?.labels || []).map(d => {
-                            const date = new Date(d);
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        }),
-                        datasets: [
-                            {
-                                label: 'Stock In',
-                                data: chartData?.in || [],
-                                backgroundColor: 'rgba(16, 185, 129, 0.55)',
-                                borderRadius: 8,
-                            },
-                            {
-                                label: 'Stock Out',
-                                data: chartData?.out || [],
-                                type: 'line',
-                                borderColor: '#ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.14)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.35,
-                                pointRadius: 3,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 850,
-                            easing: 'easeOutQuart',
-                        },
-                        plugins: {
-                            legend: { position: 'top' },
-                            tooltip: {
-                                callbacks: {
-                                    title: function(context) {
-                                        const index = context[0].dataIndex;
-                                        const dateStr = (chartData?.labels || [])[index];
-                                        if (dateStr) {
-                                            const date = new Date(dateStr);
-                                            return date.toLocaleDateString('en-US', { 
-                                                weekday: 'short', 
-                                                year: 'numeric', 
-                                                month: 'short', 
-                                                day: 'numeric' 
-                                            });
-                                        }
-                                        return '';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                ticks: {
-                                    maxRotation: 45,
-                                    minRotation: 45,
-                                    autoSkip: true,
-                                    maxTicksLimit: 15
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                }
-                            }
-                        }
-                    },
-                });
+            if (inventoryChart) {
+                inventoryChart.destroy();
+                inventoryChart = null;
             }
             
             window.showAddProductModal = () => {
@@ -7065,60 +7286,168 @@ button#menuToggle,
         // Sales History
         async function loadSales() {
             const sales = await apiCall('/sales');
+            const allSales = Array.isArray(sales?.data) ? sales.data : [];
+
+            const renderSales = (rows) => `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Cashier</th></tr>
+                    </thead>
+                    <tbody>
+                        ${rows.length ? rows.map(sale => `
+                            <tr>
+                                <td>${new Date(sale.createdAt).toLocaleString()}</td>
+                                <td>${sale.items?.length || 0}</td>
+                                <td>${formatCurrency(sale.totalAmount)}</td>
+                                <td style="text-transform: capitalize;">${sale.paymentMethod}</td>
+                                <td>${sale.user?.name || 'N/A'}</td>
+                            </tr>
+                        `).join('') : '<tr><td colspan="5" style="text-align:center; color: var(--text-light); padding: 20px;">No sales found for selected filters.</td></tr>'}
+                    </tbody>
+                </table>
+                <div class="mobile-cards-container">
+                    ${rows.length ? rows.map(sale => `
+                        <div class="mobile-card">
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Date</div>
+                                    <div class="mobile-card-value">${new Date(sale.createdAt).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Items</div>
+                                    <div class="mobile-card-value">${sale.items?.length || 0}</div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Total</div>
+                                    <div class="mobile-card-value success">${formatCurrency(sale.totalAmount)}</div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Payment</div>
+                                    <div class="mobile-card-value" style="text-transform: capitalize;">${sale.paymentMethod}</div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Cashier</div>
+                                    <div class="mobile-card-value">${sale.user?.name || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('') : '<div style="text-align:center; color: var(--text-light); padding: 20px;">No sales found for selected filters.</div>'}
+                </div>
+            `;
             
             const html = `
                 <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Cashier</th></tr>
-                        </thead>
-                        <tbody>
-                            ${(sales.data || []).map(sale => `
-                                <tr>
-                                    <td>${new Date(sale.createdAt).toLocaleString()}</td>
-                                    <td>${sale.items?.length || 0}</td>
-                                    <td>${formatCurrency(sale.totalAmount)}</td>
-                                    <td>${sale.paymentMethod}</td>
-                                    <td>${sale.user?.name || 'N/A'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div class="mobile-cards-container">
-                        ${(sales.data || []).map(sale => `
-                            <div class="mobile-card">
-                                <div class="mobile-card-row">
-                                    <div style="flex: 1;">
-                                        <div class="mobile-card-label">Date</div>
-                                        <div class="mobile-card-value">${new Date(sale.createdAt).toLocaleString()}</div>
-                                    </div>
-                                </div>
-                                <div class="mobile-card-row">
-                                    <div style="flex: 1;">
-                                        <div class="mobile-card-label">Items</div>
-                                        <div class="mobile-card-value">${sale.items?.length || 0}</div>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <div class="mobile-card-label">Total</div>
-                                        <div class="mobile-card-value success">${formatCurrency(sale.totalAmount)}</div>
-                                    </div>
-                                </div>
-                                <div class="mobile-card-row">
-                                    <div style="flex: 1;">
-                                        <div class="mobile-card-label">Payment</div>
-                                        <div class="mobile-card-value" style="text-transform: capitalize;">${sale.paymentMethod}</div>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <div class="mobile-card-label">Cashier</div>
-                                        <div class="mobile-card-value">${sale.user?.name || 'N/A'}</div>
-                                    </div>
-                                </div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:14px; padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:#ffffff;">
+                        <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#475569;">
+                            <i class="fas fa-filter" style="color:#64748b;"></i> Sales Filters
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                            <div>
+                                <label for="salesDateFrom" style="display:block; margin-bottom:4px; font-size:11px; font-weight:700; color:#64748b;">From</label>
+                                <input id="salesDateFrom" type="date" style="padding:9px 11px; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff; color:#1e293b; min-width:150px;" />
                             </div>
-                        `).join('')}
+                            <div>
+                                <label for="salesDateTo" style="display:block; margin-bottom:4px; font-size:11px; font-weight:700; color:#64748b;">To</label>
+                                <input id="salesDateTo" type="date" style="padding:9px 11px; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff; color:#1e293b; min-width:150px;" />
+                            </div>
+                            <div>
+                                <label for="salesPaymentFilter" style="display:block; margin-bottom:4px; font-size:11px; font-weight:700; color:#64748b;">Payment</label>
+                                <select id="salesPaymentFilter" style="padding:9px 11px; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff; color:#1e293b; min-width:140px;">
+                                    <option value="">All</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="mobile">Mobile</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="salesSearchFilter" style="display:block; margin-bottom:4px; font-size:11px; font-weight:700; color:#64748b;">Search</label>
+                                <input id="salesSearchFilter" type="text" placeholder="Cashier, invoice, payment..." style="padding:9px 11px; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff; color:#1e293b; min-width:180px;" />
+                            </div>
+                            <button id="salesResetFilter" type="button" class="btn-secondary" style="padding:9px 14px;">Reset</button>
+                        </div>
+                    </div>
+                    <div id="salesFilterCount" style="font-size:12px; color:#64748b; margin-bottom:10px;"></div>
+                    <div id="salesHistoryResults">
+                        ${renderSales(allSales)}
                     </div>
                 </div>
             `;
             document.getElementById('pageContent').innerHTML = html;
+
+            const salesDateFrom = document.getElementById('salesDateFrom');
+            const salesDateTo = document.getElementById('salesDateTo');
+            const salesPaymentFilter = document.getElementById('salesPaymentFilter');
+            const salesSearchFilter = document.getElementById('salesSearchFilter');
+            const salesResetFilter = document.getElementById('salesResetFilter');
+            const salesHistoryResults = document.getElementById('salesHistoryResults');
+            const salesFilterCount = document.getElementById('salesFilterCount');
+
+            const applySalesFilters = () => {
+                const fromVal = String(salesDateFrom?.value || '').trim();
+                const toVal = String(salesDateTo?.value || '').trim();
+                const paymentVal = String(salesPaymentFilter?.value || '').trim().toLowerCase();
+                const searchVal = String(salesSearchFilter?.value || '').trim().toLowerCase();
+
+                const filtered = allSales.filter((sale) => {
+                    const createdAt = sale?.createdAt ? new Date(sale.createdAt) : null;
+                    if (!createdAt || Number.isNaN(createdAt.getTime())) return false;
+
+                    if (fromVal) {
+                        const fromDate = new Date(`${fromVal}T00:00:00`);
+                        if (createdAt < fromDate) return false;
+                    }
+
+                    if (toVal) {
+                        const toDate = new Date(`${toVal}T23:59:59.999`);
+                        if (createdAt > toDate) return false;
+                    }
+
+                    if (paymentVal && String(sale.paymentMethod || '').toLowerCase() !== paymentVal) {
+                        return false;
+                    }
+
+                    if (searchVal) {
+                        const haystack = [
+                            String(sale.invoiceNumber || ''),
+                            String(sale.paymentMethod || ''),
+                            String(sale.user?.name || ''),
+                        ].join(' ').toLowerCase();
+                        if (!haystack.includes(searchVal)) return false;
+                    }
+
+                    return true;
+                });
+
+                if (salesHistoryResults) {
+                    salesHistoryResults.innerHTML = renderSales(filtered);
+                }
+
+                if (salesFilterCount) {
+                    salesFilterCount.textContent = `Showing ${filtered.length} of ${allSales.length} sales`;
+                }
+            };
+
+            [salesDateFrom, salesDateTo, salesPaymentFilter, salesSearchFilter].forEach((el) => {
+                if (!el) return;
+                el.addEventListener('input', applySalesFilters);
+                el.addEventListener('change', applySalesFilters);
+            });
+
+            if (salesResetFilter) {
+                salesResetFilter.addEventListener('click', () => {
+                    if (salesDateFrom) salesDateFrom.value = '';
+                    if (salesDateTo) salesDateTo.value = '';
+                    if (salesPaymentFilter) salesPaymentFilter.value = '';
+                    if (salesSearchFilter) salesSearchFilter.value = '';
+                    applySalesFilters();
+                });
+            }
+
+            applySalesFilters();
         }
 
         // Helper function to calculate time difference
@@ -7134,53 +7463,266 @@ button#menuToggle,
             }
         }
 
-        // Open Cashier Profile Modal
-        window.openCashierProfileModal = (cashier) => {
-            const modal = document.getElementById('cashierProfileModal');
-            const profilePic = document.getElementById('cashierProfilePic');
-            const profileInitials = document.getElementById('cashierProfileInitials');
-            const profileName = document.getElementById('cashierProfileName');
-            const profileRole = document.getElementById('cashierProfileRole');
-            const profileStatus = document.getElementById('cashierProfileStatus');
-            const profileEmail = document.getElementById('cashierProfileEmail');
-            const profilePhone = document.getElementById('cashierProfilePhone');
-
-            // Set cashier info
-            profileName.textContent = cashier.name || 'Unknown';
-            profileRole.textContent = cashier.userType === 'admin' ? 'Admin' : 'Cashier';
-            profileStatus.innerHTML = `<span class="badge ${cashier.status === 'active' ? 'badge-success' : 'badge-inactive'}">${cashier.status === 'active' ? 'Active' : 'Inactive'}</span>`;
-            profileEmail.textContent = cashier.email || 'No email provided';
-            profilePhone.textContent = cashier.phoneNumber || 'No phone provided';
-
-            // Set profile picture or initials
-            if (cashier.profilePic) {
-                const profileSrc = resolveProfileImage(cashier.profilePic, new Date().toISOString());
-                profilePic.src = profileSrc;
-                profilePic.style.display = 'block';
-                profileInitials.style.display = 'none';
-            } else {
-                const initials = (cashier.name || '?').split(' ').map(n => n.charAt(0)).join('').toUpperCase();
-                profileInitials.textContent = initials;
-                profileInitials.style.display = 'flex';
-                profilePic.style.display = 'none';
-            }
-
-            // Show modal
-            modal.classList.add('active');
-            requestAnimationFrame(() => modal.classList.add('show'));
-        };
-
-        // Close Cashier Profile Modal
         function closeCashierProfileModal() {
             const modal = document.getElementById('cashierProfileModal');
+            if (!modal) return;
             modal.classList.remove('show');
             setTimeout(() => modal.classList.remove('active'), 220);
         }
 
+        // Open Cashier Profile Modal
+        window.openCashierProfileModal = (cashier) => {
+            const modal = document.getElementById('cashierProfileModal');
+            if (!modal) return;
+
+            const initials = (cashier?.name || '?')
+                .split(' ')
+                .map(part => part.charAt(0))
+                .join('')
+                .toUpperCase();
+
+            const profilePic = document.getElementById('cashierProfilePic');
+            const profileInitials = document.getElementById('cashierProfileInitials');
+            const profileSrc = cashier?.profilePic ? resolveProfileImage(cashier.profilePic) : '';
+
+            document.getElementById('cashierProfileName').textContent = cashier?.name || '-';
+            document.getElementById('cashierProfileRole').textContent = cashier?.userType === 'admin' ? 'Admin' : 'Cashier';
+            document.getElementById('cashierProfileStatus').textContent = cashier?.status === 'active' ? 'Active' : 'Inactive';
+            document.getElementById('cashierProfileEmail').textContent = cashier?.email || '-';
+            document.getElementById('cashierProfilePhone').textContent = cashier?.phoneNumber || '-';
+
+            if (profilePic && profileInitials) {
+                if (profileSrc) {
+                    profilePic.src = profileSrc;
+                    profilePic.style.display = 'block';
+                    profileInitials.style.display = 'none';
+                } else {
+                    profilePic.style.display = 'none';
+                    profileInitials.style.display = 'flex';
+                    profileInitials.textContent = initials || '?';
+                }
+            }
+
+            modal.classList.add('active');
+            requestAnimationFrame(() => modal.classList.add('show'));
+        };
+
+        // Expenses
+        async function loadExpenses() {
+            const expensesSummary = await apiCall('/expenses/summary?limit=12', { redirectOnUnauthorized: false });
+            const recentExpenses = Array.isArray(expensesSummary?.recentExpenses) ? expensesSummary.recentExpenses : [];
+            const totalExpenses = Number(expensesSummary?.totalExpenses || 0);
+            const todayExpenses = Number(expensesSummary?.todayExpenses || 0);
+            const totalRevenue = Number(expensesSummary?.totalRevenue || 0);
+            const netIncome = Number(expensesSummary?.netIncome || 0);
+
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Expenses</div>
+                        <div class="stat-value">${formatCurrency(totalExpenses)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Today Expenses</div>
+                        <div class="stat-value">${formatCurrency(todayExpenses)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Total Revenue</div>
+                        <div class="stat-value">${formatCurrency(totalRevenue)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Net Income</div>
+                        <div class="stat-value" style="color:${netIncome < 0 ? '#dc2626' : '#059669'};">${formatCurrency(netIncome)}</div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-bottom: 20px; border:1px solid #dbeafe; box-shadow:0 10px 26px rgba(30, 64, 175, 0.08);">
+                    <h3 style="margin-bottom: 6px;">Current Expenses Overview</h3>
+                    <p style="font-size:13px; color:var(--text-light); margin:0 0 12px 0;">Latest expense entries and their amounts.</p>
+                    <div style="height: 300px;">
+                        <canvas id="expensesTrendChart"></canvas>
+                    </div>
+                </div>
+                <div style="display:flex; gap:20px; margin-bottom:20px; flex-wrap:wrap; align-items:stretch;">
+                    <div class="panel" style="flex:1; min-width:320px; margin-bottom:0; border:1px solid #dbeafe; box-shadow:0 10px 26px rgba(30, 64, 175, 0.08);">
+                        <h3 style="margin-bottom:8px;">Add Other Expenses</h3>
+                        <p style="font-size:13px; color:var(--text-light); margin:0 0 16px 0;">Create expense entries like transportation, supplies, bills, internet, and more.</p>
+                        <form id="expenseForm" style="display:flex; flex-direction:column; gap:14px;">
+                            <div>
+                                <label for="expenseTitle" style="display:block; margin-bottom:6px; font-size:13px; font-weight:600; color:#475569;">Expense Title</label>
+                                <input id="expenseTitle" name="title" type="text" placeholder="Transportation" style="width:100%; padding:12px 14px; border:1px solid #dbeafe; border-radius:10px; background:#f8fafc; box-sizing:border-box;" required />
+                            </div>
+                            <div>
+                                <label for="expenseAmount" style="display:block; margin-bottom:6px; font-size:13px; font-weight:600; color:#475569;">Expense Amount</label>
+                                <input id="expenseAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" style="width:100%; padding:12px 14px; border:1px solid #dbeafe; border-radius:10px; background:#f8fafc; box-sizing:border-box;" required />
+                            </div>
+                            <button type="submit" id="expenseSubmitBtn" class="btn-primary" style="width:auto; align-self:flex-start; padding:12px 20px; display:inline-flex; align-items:center; gap:8px;">
+                                <i class="fas fa-plus-circle"></i> Save Expense
+                            </button>
+                        </form>
+                    </div>
+                    <div class="panel" style="flex:1; min-width:320px; margin-bottom:0; border:1px solid #dbeafe; box-shadow:0 10px 26px rgba(30, 64, 175, 0.08);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+                            <div>
+                                <h3 style="margin-bottom:6px;">Recent Expenses</h3>
+                                <p style="font-size:13px; color:var(--text-light); margin:0;">Latest expense entries affecting net income.</p>
+                            </div>
+                            <div style="padding:8px 12px; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-weight:700; font-size:12px;">Today ${formatCurrency(todayExpenses)}</div>
+                        </div>
+                        <div id="recentExpensesList" style="display:flex; flex-direction:column; gap:10px;">
+                            ${recentExpenses.length ? recentExpenses.map((expense) => `
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid #e2e8f0; border-radius:12px; background:#ffffff;">
+                                    <div style="min-width:0;">
+                                        <div style="font-weight:700; color:#0f172a; margin-bottom:4px; word-break:break-word;">${escapeHtml(expense.title || 'Untitled Expense')}</div>
+                                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">${new Date(expense.createdAt).toLocaleString()}</div>
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                                        <div style="font-weight:800; color:#dc2626; white-space:nowrap;">${formatCurrency(Number(expense.amount || 0))}</div>
+                                        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                                            <button type="button" class="expense-edit-btn" data-id="${expense.id}" data-title="${encodeURIComponent(expense.title || '')}" data-amount="${Number(expense.amount || 0)}" style="padding:6px 10px; border:none; border-radius:8px; background:#2563eb; color:#ffffff; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <button type="button" class="expense-delete-btn" data-id="${expense.id}" style="padding:6px 10px; border:none; border-radius:8px; background:#dc2626; color:#ffffff; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:24px 0;">No expenses recorded yet.</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('pageContent').innerHTML = html;
+
+            const existingEditExpenseModal = document.getElementById('editExpenseModal');
+            if (existingEditExpenseModal) existingEditExpenseModal.remove();
+
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal-backdrop" id="editExpenseModal">
+                    <div class="modal-card" style="max-width: 460px; width: 92%;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Edit Expense</h3>
+                            <button class="modal-close" id="closeEditExpenseModal" type="button">✕</button>
+                        </div>
+                        <form id="editExpenseForm" class="modal-form" style="display:flex; flex-direction:column; gap:14px;">
+                            <input id="editExpenseId" type="hidden" />
+                            <div class="modal-field">
+                                <label for="editExpenseTitle">Expense Title</label>
+                                <input id="editExpenseTitle" type="text" required />
+                            </div>
+                            <div class="modal-field">
+                                <label for="editExpenseAmount">Expense Amount</label>
+                                <input id="editExpenseAmount" type="number" min="0.01" step="0.01" required />
+                            </div>
+                            <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px;">
+                                <button type="button" class="btn-secondary" id="cancelEditExpenseBtn">Cancel</button>
+                                <button type="submit" class="btn-modal-primary" id="saveEditExpenseBtn">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `);
+
+            const expensesTrendChartEl = document.getElementById('expensesTrendChart');
+            if (expensesTrendChartEl) {
+                if (expensesTrendChart instanceof Chart) expensesTrendChart.destroy();
+                const chartRows = [...recentExpenses].slice(0, 10).reverse();
+                const labels = chartRows.map((row) => {
+                    const title = String(row.title || 'Expense');
+                    const shortTitle = title.length > 14 ? `${title.slice(0, 14)}...` : title;
+                    const shortDate = row?.createdAt
+                        ? new Date(row.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                        : 'No date';
+                    return `${shortDate} - ${shortTitle}`;
+                });
+                const amounts = chartRows.map((row) => Number(row.amount || 0));
+                const expenseChartLabels = labels.length ? labels : [getResetDateLabel()];
+                const expenseChartAmounts = amounts.length ? amounts : [0];
+
+                expensesTrendChart = new Chart(expensesTrendChartEl, {
+                    type: 'bar',
+                    data: {
+                        labels: expenseChartLabels,
+                        datasets: [{
+                            label: 'Expense Amount',
+                            data: expenseChartAmounts,
+                            backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                            borderColor: 'rgba(220, 38, 38, 0.95)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 900, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => {
+                                        const idx = items?.[0]?.dataIndex ?? 0;
+                                        const row = chartRows[idx];
+                                        const title = String(row?.title || 'Expense');
+                                        const fullDate = row?.createdAt ? new Date(row.createdAt).toLocaleString() : 'No date';
+                                        return `${title} (${fullDate})`;
+                                    },
+                                    label: (ctx) => `Amount: ${formatCurrency(Number(ctx.parsed.y || 0))}`,
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+
+            const expenseForm = document.getElementById('expenseForm');
+            if (expenseForm) {
+                expenseForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const title = String(document.getElementById('expenseTitle')?.value || '').trim();
+                    const amount = Number(document.getElementById('expenseAmount')?.value || 0);
+                    if (!title) return showErrorNotification('Please enter an expense title.');
+                    if (!Number.isFinite(amount) || amount <= 0) return showErrorNotification('Please enter a valid expense amount.');
+
+                    try {
+                        await apiCall('/expenses', {
+                            method: 'POST',
+                            body: JSON.stringify({ title, amount }),
+                            redirectOnUnauthorized: false,
+                        });
+                        showSuccessModal('Expense saved successfully.');
+                        await loadExpenses();
+                    } catch (error) {
+                        showErrorNotification(error.message || 'Failed to save expense.');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.expense-delete-btn').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const expenseId = button.dataset.id;
+                    const confirmed = confirm('Delete this expense? This action cannot be undone.');
+                    if (!confirmed) return;
+                    try {
+                        await apiCall(`/expenses/${expenseId}`, { method: 'DELETE', redirectOnUnauthorized: false });
+                        showSuccessModal('Expense deleted successfully.');
+                        await loadExpenses();
+                    } catch (error) {
+                        showErrorNotification(error.message || 'Failed to delete expense.');
+                    }
+                });
+            });
+        }
+
         // Staff Management
         async function loadStaff() {
-            const staff = await apiCall('/staff/list');
+            const [staff, topStaff] = await Promise.all([
+                apiCall('/staff/list'),
+                apiCall('/sales/top-staff', { redirectOnUnauthorized: false })
+            ]);
             const staffRows = Array.isArray(staff) ? staff.filter(member => member.id !== currentUser.id) : [];
+            const topStaffList = Array.isArray(topStaff) ? topStaff : [];
             const activeToday = staffRows.filter((member) => member.status === 'active').length;
 
             const html = `
@@ -7192,6 +7734,13 @@ button#menuToggle,
                     <div class="stat-card">
                         <div class="stat-title">Active Today</div>
                         <div class="stat-value">${activeToday}</div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-bottom:20px;border:1px solid #dbeafe;box-shadow:0 10px 26px rgba(30,64,175,0.1);">
+                    <h3 style="margin-bottom:6px;">🏆 Top Selling Cashier</h3>
+                    <p style="font-size:13px;color:var(--text-light);margin:0 0 12px 0;">Top cashiers ranked by revenue and number of transactions.</p>
+                    <div style="height:300px;">
+                        <canvas id="staffCashierChart"></canvas>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -7262,38 +7811,168 @@ button#menuToggle,
                 </div>
             `;
             document.getElementById('pageContent').innerHTML = html;
+
+            // Render Top Selling Cashier Chart
+            const cashierChartEl = document.getElementById('staffCashierChart');
+            if (cashierChartEl) {
+                if (window.staffCashierChart instanceof Chart) {
+                    window.staffCashierChart.destroy();
+                }
+                window.staffCashierChart = null;
+                const hasCashierSales = topStaffList.length > 0;
+                const cashierLabels = hasCashierSales ? topStaffList.slice(0, 8).map((s) => s.name || 'Unknown') : [getResetDateLabel()];
+                const cashierRevenue = hasCashierSales ? topStaffList.slice(0, 8).map((s) => Number(s.totalRevenue || 0)) : [0];
+                const cashierTransactions = hasCashierSales ? topStaffList.slice(0, 8).map((s) => Number(s.totalTransactions || 0)) : [0];
+
+                window.staffCashierChart = new Chart(cashierChartEl, {
+                    type: 'bar',
+                    data: {
+                        labels: cashierLabels,
+                        datasets: [
+                            {
+                                label: 'Revenue',
+                                data: cashierRevenue,
+                                backgroundColor: 'rgba(34, 197, 94, 0.82)',
+                                borderColor: 'rgba(21, 128, 61, 0.95)',
+                                borderWidth: 1,
+                                borderRadius: 6,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Transactions',
+                                data: cashierTransactions,
+                                type: 'line',
+                                borderColor: 'rgba(59, 130, 246, 0.95)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                borderWidth: 2,
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                yAxisID: 'y1',
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 900, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        if (ctx.dataset.label === 'Revenue') {
+                                            return `Revenue: ${formatCurrency(ctx.parsed.y)}`;
+                                        }
+                                        return `Transactions: ${ctx.parsed.y}`;
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                position: 'left',
+                                grid: { color: 'rgba(100,116,139,0.14)' },
+                                ticks: { callback: (v) => formatCurrency(Number(v)), font: { size: 11 } },
+                            },
+                            y1: {
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                ticks: { precision: 0 },
+                            },
+                        },
+                    },
+                });
+            }
         }
 
-        // Reports
-        async function loadReports() {
-            const [salesStats, salesResult] = await Promise.all([
-                apiCall('/sales/stats'),
-                apiCall('/sales?limit=100&page=1'),
-            ]);
-            const salesRows = Array.isArray(salesResult?.data) ? salesResult.data : [];
-            reportPrintStats = {
-                totalSales: Number(salesStats.totalSales || 0),
-                totalRevenue: Number(salesStats.totalRevenue || 0),
-                totalItems: Number(salesStats.totalItems || 0),
+        function filterReportRowsByDate(rows = [], fromDate = '', toDate = '') {
+            const start = fromDate ? new Date(`${fromDate}T00:00:00`) : null;
+            const end = toDate ? new Date(`${toDate}T23:59:59.999`) : null;
+
+            return rows.filter((row) => {
+                if (!row?.createdAt) {
+                    return false;
+                }
+                const createdAt = new Date(row.createdAt);
+                if (start && createdAt < start) {
+                    return false;
+                }
+                if (end && createdAt > end) {
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function calculateReportStats(rows = []) {
+            return rows.reduce((acc, row) => {
+                acc.totalSales += 1;
+                if (Array.isArray(row.items)) {
+                    row.items.forEach((item) => {
+                        const qty = Number(item.quantity) || 0;
+                        const subtotal = Number(item.subtotal) || (qty * (Number(item.unitPrice) || 0));
+                        acc.totalItems += qty;
+                        acc.totalRevenue += subtotal;
+                    });
+                }
+                return acc;
+            }, { totalSales: 0, totalRevenue: 0, totalItems: 0 });
+        }
+
+        function getDefaultReportDateRange(rows = []) {
+            const validDates = rows
+                .map((row) => row?.createdAt ? new Date(row.createdAt) : null)
+                .filter((date) => date && !Number.isNaN(date.getTime()))
+                .sort((left, right) => left - right);
+
+            if (validDates.length === 0) {
+                return { from: '', to: '' };
+            }
+
+            return {
+                from: validDates[0].toISOString().slice(0, 10),
+                to: validDates[validDates.length - 1].toISOString().slice(0, 10),
             };
-            reportPrintRows = salesRows;
-            
+        }
+
+        function renderReportsPage() {
+            const filteredRows = filterReportRowsByDate(reportAllRows, reportDateFrom, reportDateTo);
+            const filteredStats = calculateReportStats(filteredRows);
+            const hasDateFilter = !!(reportDateFrom || reportDateTo);
+            const statsTitleSuffix = hasDateFilter ? 'Filtered Range' : 'Recent Sales';
+
+            reportPrintStats = filteredStats;
+            reportPrintRows = filteredRows;
+
             const html = `
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-title">Total Sales (All Time)</div>
-                        <div class="stat-value">${salesStats.totalSales || 0}</div>
+                        <div class="stat-title">Total Sales (${statsTitleSuffix})</div>
+                        <div class="stat-value">${filteredStats.totalSales || 0}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-title">Total Revenue</div>
-                        <div class="stat-value">${formatCurrency(salesStats.totalRevenue)}</div>
+                        <div class="stat-value">${formatCurrency(filteredStats.totalRevenue)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-title">Total Items Sold</div>
-                        <div class="stat-value">${salesStats.totalItems || 0}</div>
+                        <div class="stat-value">${filteredStats.totalItems || 0}</div>
                     </div>
                 </div>
                 <div class="table-wrap">
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff;">
+                        <div style="font-size: 12px; font-weight: 700; color: #475569; margin-right: 4px; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-calendar-alt" style="color: #64748b;"></i> Date Filter</div>
+                        <div>
+                            <label for="reportDateFrom" style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; color: #64748b;">From</label>
+                            <input id="reportDateFrom" type="date" value="${reportDateFrom}" style="padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; color: #1e293b; min-width: 170px;" />
+                        </div>
+                        <div>
+                            <label for="reportDateTo" style="display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; color: #64748b;">To</label>
+                            <input id="reportDateTo" type="date" value="${reportDateTo}" style="padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; color: #1e293b; min-width: 170px;" />
+                        </div>
+                    </div>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -7307,8 +7986,8 @@ button#menuToggle,
                             </tr>
                         </thead>
                         <tbody>
-                            ${salesRows.length === 0 ? '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-light);">No sales data found.</td></tr>' : 
-                              salesRows.map(row => {
+                            ${filteredRows.length === 0 ? '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-light);">No sales data found for the selected date range.</td></tr>' : 
+                              filteredRows.map(row => {
                                 const cashierName = row.user?.name || row.userName || '-';
                                 const date = row.createdAt ? new Date(row.createdAt).toLocaleString() : '-';
                                 const paymentMethod = row.paymentMethod || '-';
@@ -7321,7 +8000,6 @@ button#menuToggle,
                                     </tr>`;
                                 }
                                 
-                                // Create a row for each item in the sale
                                 return row.items.map((item, idx) => {
                                     const itemName = item.product?.name || item.productName || 'Unknown Product';
                                     const qty = Number(item.quantity) || 0;
@@ -7343,8 +8021,8 @@ button#menuToggle,
                         </tbody>
                     </table>
                     <div class="mobile-cards-container">
-                        ${salesRows.length === 0 ? '<div style="padding: 20px; color: var(--text-light); text-align: center;">No sales data found.</div>' : 
-                          salesRows.map(row => {
+                        ${filteredRows.length === 0 ? '<div style="padding: 20px; color: var(--text-light); text-align: center;">No sales data found for the selected date range.</div>' : 
+                          filteredRows.map(row => {
                             const cashierName = row.user?.name || row.userName || '-';
                             const date = row.createdAt ? new Date(row.createdAt).toLocaleString() : '-';
                             const paymentMethod = row.paymentMethod || '-';
@@ -7363,7 +8041,6 @@ button#menuToggle,
                                 </div>`;
                             }
                             
-                            // Create a card for each item in the sale
                             return row.items.map((item, idx) => {
                                 const itemName = item.product?.name || item.productName || 'Unknown Product';
                                 const qty = Number(item.quantity) || 0;
@@ -7414,11 +8091,338 @@ button#menuToggle,
                         }
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                    <button class="btn-primary" onclick="printReportsOnly()" style="width: auto;">Print Data Only</button>
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+                    <button class="btn-primary" onclick="saveReportsAsPdf()" style="width: auto; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28); display: inline-flex; align-items: center; gap: 8px;"><i class="fas fa-file-pdf"></i> Save as PDF</button>
+                    <button class="btn-primary" onclick="printReportsOnly()" style="width: auto; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28); display: inline-flex; align-items: center; gap: 8px;"><i class="fas fa-print"></i> Print Data Only</button>
                 </div>
             `;
+
             document.getElementById('pageContent').innerHTML = html;
+
+            const fromInput = document.getElementById('reportDateFrom');
+            const toInput = document.getElementById('reportDateTo');
+            const onDateFilterChange = () => {
+                const nextFrom = fromInput?.value || '';
+                const nextTo = toInput?.value || '';
+
+                if (nextFrom && nextTo && nextFrom > nextTo) {
+                    alert('The From date cannot be later than the To date.');
+                    if (toInput) {
+                        toInput.value = nextFrom;
+                    }
+                    reportDateFrom = nextFrom;
+                    reportDateTo = nextFrom;
+                    renderReportsPage();
+                    return;
+                }
+
+                reportDateFrom = nextFrom;
+                reportDateTo = nextTo;
+                renderReportsPage();
+            };
+
+            if (fromInput) {
+                fromInput.addEventListener('change', onDateFilterChange);
+            }
+            if (toInput) {
+                toInput.addEventListener('change', onDateFilterChange);
+            }
+        }
+
+        // Reports
+        async function loadReports() {
+            const salesResult = await apiCall('/sales?limit=100&page=1');
+            reportAllRows = Array.isArray(salesResult?.data) ? salesResult.data : [];
+            const defaultRange = getDefaultReportDateRange(reportAllRows);
+            reportDefaultDateFrom = defaultRange.from;
+            reportDefaultDateTo = defaultRange.to;
+
+            if (!reportDateFrom && !reportDateTo) {
+                reportDateFrom = reportDefaultDateFrom;
+                reportDateTo = reportDefaultDateTo;
+            }
+
+            renderReportsPage();
+        }
+
+        async function loadStatistics() {
+            const pageContent = document.getElementById('pageContent');
+            pageContent.innerHTML = `
+                <div class="panel" style="margin-bottom: 20px; border: none; background: linear-gradient(130deg, #0f172a 0%, #1d4ed8 52%, #0ea5e9 100%); color: #ffffff; box-shadow: 0 12px 28px rgba(30, 64, 175, 0.32);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <div>
+                            <h3 style="margin-bottom:6px;color:#ffffff;">Philippine Market Statistics</h3>
+                            <p style="font-size:13px;color:rgba(255,255,255,0.86);margin:0;">Local sold products + real Philippine indicators from World Bank Open Data.</p>
+                        </div>
+                        <button class="btn-primary" type="button" onclick="loadStatistics()" style="width:auto;padding:10px 14px;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.4);backdrop-filter:blur(4px);">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="panel" style="margin-bottom: 20px;">
+                    <p style="font-size:14px;color:var(--text-light);margin:0;">Loading statistics...</p>
+                </div>
+            `;
+
+            try {
+                const now = new Date();
+                const posResetDate = localStorage.getItem('posResetDate');
+                let trendDays;
+                if (posResetDate) {
+                    const resetMs = new Date(posResetDate + 'T00:00:00').getTime();
+                    trendDays = Math.max(1, Math.ceil((now.getTime() - resetMs) / (1000 * 60 * 60 * 24)));
+                } else {
+                    trendDays = Math.max(7, now.getDate());
+                }
+                const [result, revenueDailyRaw, expensesDailyRaw] = await Promise.all([
+                    apiCall('/statistics/market-demand?limit=10', { redirectOnUnauthorized: false }),
+                    apiCall(`/sales/daily-revenue?days=${trendDays}`, { redirectOnUnauthorized: false }),
+                    apiCall(`/expenses/daily?days=${trendDays}`, { redirectOnUnauthorized: false }),
+                ]);
+                const topSoldProducts = Array.isArray(result?.topSoldProducts) ? result.topSoldProducts : [];
+                const phMarketIndicators = Array.isArray(result?.phMarketIndicators) ? result.phMarketIndicators : [];
+                const indicatorStatus = result?.indicatorStatus || {};
+                const revenueDaily = Array.isArray(revenueDailyRaw) ? revenueDailyRaw : [];
+                const expensesDaily = Array.isArray(expensesDailyRaw) ? expensesDailyRaw : [];
+
+                const topSoldProduct = result?.summary?.topSoldProduct;
+                const latestCPI = result?.summary?.latestCPI;
+                const lowestSoldProduct = result?.summary?.lowestSoldProduct;
+
+                const maxUnitsSold = Math.max(1, ...topSoldProducts.map((item) => Number(item.totalSold || 0)));
+                const maxRevenueAmount = Math.max(1, ...topSoldProducts.map((item) => Number(item.revenue || 0)));
+                const maxIndicatorValue = Math.max(1, ...phMarketIndicators.map((item) => Math.abs(Number(item.value || 0))));
+
+                const indicatorRows = phMarketIndicators.length
+                    ? phMarketIndicators.map((item, index) => `
+                        <tr>
+                            <td style="padding:14px 12px;vertical-align:middle;">
+                                <span style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-weight:800;font-size:12px;">${index + 1}</span>
+                            </td>
+                            <td style="padding:14px 12px;vertical-align:middle;min-width:220px;">
+                                <div style="display:flex;flex-direction:column;gap:4px;">
+                                    <strong style="font-size:14px;color:#0f172a;">${item.title || 'N/A'}</strong>
+                                    <span style="font-size:11px;color:#64748b;">${item.year || 'N/A'} update</span>
+                                </div>
+                            </td>
+                            <td style="padding:14px 12px;vertical-align:middle;">
+                                <span style="display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#f0fdf4;color:#166534;font-weight:600;font-size:12px;border:1px solid #bbf7d0;">${item.category || 'N/A'}</span>
+                            </td>
+                            <td style="padding:14px 12px;vertical-align:middle;min-width:200px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:6px;color:#334155;">
+                                    <span>Value</span>
+                                    <strong>${item.value !== null ? Number(item.value).toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}</strong>
+                                </div>
+                                <div style="height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden;">
+                                    <div style="height:100%;width:${item.value !== null ? Math.min(100, (Math.abs(Number(item.value || 0)) / maxIndicatorValue) * 100) : 0}%;background:linear-gradient(90deg,#0284c7,#38bdf8);"></div>
+                                </div>
+                            </td>
+                            <td style="padding:14px 12px;vertical-align:middle;font-weight:700;color:#1e293b;">${item.year || 'N/A'}</td>
+                            <td style="padding:14px 12px;vertical-align:middle;color:#475569;font-size:12px;">${item.unit || ''}</td>
+                        </tr>
+                    `).join('')
+                    : `<tr><td colspan="6" style="text-align:center;color:var(--text-light);">${indicatorStatus?.reason || 'Philippine market data unavailable.'}</td></tr>`;
+
+                const totalUnitsSold = topSoldProducts.reduce((sum, item) => sum + Number(item.totalSold || 0), 0);
+                const totalRevenue = topSoldProducts.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+                const indicatorValueCount = phMarketIndicators.filter((item) => item.value !== null && item.value !== undefined).length;
+
+                pageContent.innerHTML = `
+                    <div class="stats-grid" style="margin-bottom:20px;">
+                        <div class="stat-card" style="background:linear-gradient(145deg,#ffffff 0%, #f8fafc 100%); border:1px solid #dbeafe; box-shadow: 0 10px 26px rgba(30, 64, 175, 0.12);">
+                            <div class="stat-title" style="color:#1e3a8a;">Top Sold Product</div>
+                            <div class="stat-value" style="font-size:20px;">${topSoldProduct?.name || 'None'}</div>
+                            <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${topSoldProduct ? `${Number(topSoldProduct.totalSold || 0)} unit(s) sold` : '0 unit(s) sold'}</div>
+                        </div>
+                        <div class="stat-card" style="background:linear-gradient(145deg,#ffffff 0%, #f8fafc 100%); border:1px solid #dbeafe; box-shadow: 0 10px 26px rgba(30, 64, 175, 0.12);">
+                            <div class="stat-title" style="color:#1e3a8a;">Top 10 Sales Totals</div>
+                            <div class="stat-value" style="font-size:20px;">${totalUnitsSold.toLocaleString()} units</div>
+                            <div style="font-size:12px;color:var(--text-light);margin-top:6px;">Revenue ${formatCurrency(totalRevenue)}</div>
+                        </div>
+
+                    </div>
+
+                    <div class="panel" style="margin-bottom:20px;border:1px solid #dbeafe; box-shadow: 0 10px 26px rgba(30, 64, 175, 0.1);">
+                        <h3 style="margin-bottom:6px;">Top Sold Products Chart</h3>
+                        <p style="font-size:13px;color:var(--text-light);margin:0 0 12px 0;">Units sold and revenue by product.</p>
+                        <div style="height:300px;">
+                            <canvas id="statisticsSoldChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="margin-bottom:20px;border:1px solid #dbeafe; box-shadow: 0 10px 26px rgba(30, 64, 175, 0.1);">
+                        <h3 style="margin-bottom:6px;">Expenses vs Revenue (Current Trend)</h3>
+                        <p style="font-size:13px;color:var(--text-light);margin:0 0 12px 0;">Daily comparison for the latest ${trendDays} day(s)${posResetDate ? ' <span style="color:#dc2626;font-weight:600;">(since POS restart on ' + new Date(posResetDate + 'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) + ')</span>' : ''}.</p>
+                        <div style="height:300px;">
+                            <canvas id="statisticsExpensesRevenueChart"></canvas>
+                        </div>
+                    </div>
+                `;
+
+                const soldChartEl = document.getElementById('statisticsSoldChart');
+                if (soldChartEl) {
+                    if (statisticsSoldChart) {
+                        statisticsSoldChart.destroy();
+                    }
+
+                    const soldLabels = topSoldProducts.length
+                        ? topSoldProducts.map((item) => item.name || 'Unknown').slice(0, 8)
+                        : [getResetDateLabel()];
+                    const soldValues = topSoldProducts.length
+                        ? topSoldProducts.map((item) => Number(item.totalSold || 0)).slice(0, 8)
+                        : [0];
+                    const soldRevenue = topSoldProducts.length
+                        ? topSoldProducts.map((item) => Number(item.revenue || 0)).slice(0, 8)
+                        : [0];
+
+                    statisticsSoldChart = new Chart(soldChartEl, {
+                        type: 'bar',
+                        data: {
+                            labels: soldLabels,
+                            datasets: [
+                                {
+                                    label: 'Units Sold',
+                                    data: soldValues,
+                                    backgroundColor: 'rgba(37, 99, 235, 0.82)',
+                                    borderColor: 'rgba(30, 64, 175, 0.95)',
+                                    borderWidth: 1,
+                                    borderRadius: 6,
+                                    yAxisID: 'y',
+                                },
+                                {
+                                    label: 'Revenue',
+                                    data: soldRevenue,
+                                    type: 'line',
+                                    borderColor: 'rgba(16, 185, 129, 0.95)',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    borderWidth: 2,
+                                    tension: 0.3,
+                                    pointRadius: 3,
+                                    yAxisID: 'y1',
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 900, easing: 'easeOutQuart' },
+                            plugins: {
+                                legend: { position: 'bottom' },
+                            },
+                            scales: {
+                                x: { grid: { display: false } },
+                                y: {
+                                    position: 'left',
+                                    grid: { color: 'rgba(100, 116, 139, 0.14)' },
+                                    ticks: { precision: 0 },
+                                },
+                                y1: {
+                                    position: 'right',
+                                    grid: { drawOnChartArea: false },
+                                    ticks: {
+                                        callback: (value) => formatCurrency(Number(value || 0)),
+                                    },
+                                },
+                            },
+                        },
+                    });
+                }
+
+                const expensesRevenueChartEl = document.getElementById('statisticsExpensesRevenueChart');
+                if (expensesRevenueChartEl) {
+                    if (statisticsExpensesRevenueChart) {
+                        statisticsExpensesRevenueChart.destroy();
+                    }
+
+                    const dateSet = new Set([
+                        ...revenueDaily.map((row) => String(row?.date || '')),
+                        ...expensesDaily.map((row) => String(row?.date || '')),
+                    ]);
+
+                    const sortedDates = [...dateSet]
+                        .filter(Boolean)
+                        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+                    const safeDates = sortedDates.length ? sortedDates : [getResetDateKey()];
+
+                    const revenueByDate = new Map(
+                        revenueDaily.map((row) => [String(row?.date || ''), Number(row?.revenue || 0)]),
+                    );
+                    const expensesByDate = new Map(
+                        expensesDaily.map((row) => [String(row?.date || ''), Number(row?.amount || 0)]),
+                    );
+
+                    const chartLabels = safeDates.map((dateStr) => {
+                        const parsed = new Date(`${dateStr}T00:00:00`);
+                        return Number.isNaN(parsed.getTime())
+                            ? dateStr
+                            : parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    });
+
+                    const revenueSeries = safeDates.map((dateStr) => Number(revenueByDate.get(dateStr) || 0));
+                    const expensesSeries = safeDates.map((dateStr) => Number(expensesByDate.get(dateStr) || 0));
+
+                    statisticsExpensesRevenueChart = new Chart(expensesRevenueChartEl, {
+                        type: 'line',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [
+                                {
+                                    label: 'Revenue',
+                                    data: revenueSeries,
+                                    borderColor: 'rgba(16, 185, 129, 1)',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                    borderWidth: 2,
+                                    tension: 0.3,
+                                    fill: true,
+                                    pointRadius: 2,
+                                },
+                                {
+                                    label: 'Expenses',
+                                    data: expensesSeries,
+                                    borderColor: 'rgba(220, 38, 38, 1)',
+                                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                                    borderWidth: 2,
+                                    tension: 0.3,
+                                    fill: true,
+                                    pointRadius: 2,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 900, easing: 'easeOutQuart' },
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => `${context.dataset.label}: ${formatCurrency(Number(context.parsed.y || 0))}`,
+                                    },
+                                },
+                            },
+                            scales: {
+                                x: { grid: { display: false } },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: 'rgba(100, 116, 139, 0.14)' },
+                                    ticks: {
+                                        callback: (value) => formatCurrency(Number(value || 0)),
+                                    },
+                                },
+                            },
+                        },
+                    });
+                }
+
+            } catch (error) {
+                pageContent.innerHTML = `
+                    <div class="panel">
+                        <h3 style="margin-bottom:8px;">Statistics</h3>
+                        <p style="color:var(--danger);font-size:14px;">Unable to load statistics right now. Please try again.</p>
+                    </div>
+                `;
+            }
         }
 
         // Settings Page
@@ -7426,24 +8430,24 @@ button#menuToggle,
             const user = currentUser || {};
             
             const html = `
-                <div style="width: 100%; padding: 2px 2px 20px 2px;">
+                <div style="width: 100%; padding: 2px 0 20px 0;">
                     <!-- Settings Tabs with Facebook-like Layout -->
-                    <div class="panel" style="width: 100%; max-width: 1600px; margin-left: auto; margin-right: auto; background: #ffffff; border: 2px solid #e5e7eb; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border-radius: 16px;">
+                    <div class="panel" style="width: 100%; max-width: 2200px; margin-left: auto; margin-right: auto; background: #ffffff; border: 2px solid #e5e7eb; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border-radius: 16px;">
                         <div style="display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 0; flex-wrap: wrap; background: #ffffff; border-radius: 14px 14px 0 0;">
                             <button class="settings-tab active" data-tab="account" style="padding: 16px 24px; background: none; border: none; cursor: pointer; font-weight: 600; font-size: 16px; color: gray; border-bottom: 4px solid gray; margin-bottom: -2px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">🔐 Account</button>
                         </div>
 
                         <!-- Account Tab - Modern Design -->
-                        <div id="settings-tab-account" class="settings-tab-content" style="width: 100%; max-width: 100%; margin: 0 auto; padding: 30px 5px; animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; overflow-x: hidden;">
+                        <div id="settings-tab-account" class="settings-tab-content" style="width: 100%; max-width: 100%; margin: 0 auto; padding: 30px 0; animation: fadeInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; overflow-x: hidden;">
                             
                             <!-- Horizontal Flex Container for PC Screens -->
-                            <div class="account-settings-container" style="display: flex; flex-direction: column; gap: 20px; align-items: stretch;">
+                            <div class="account-settings-container" style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; width: 100%;">
                             
                             <!-- Profile Card - Professional Design -->
                             <div class="profile-card" style="flex: 1; min-width: 0; margin-top: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;">
                                 
                                 <!-- Profile Header Section -->
-                                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 32px 40px 24px 40px; position: relative;">
+                                <div class="account-card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 32px 24px 24px 24px; position: relative;">
                                     <div class="profile-header-container" style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; max-width: 100%;">
                                         <!-- Profile Image -->
                                         <div style="position: relative; margin-bottom: 16px; margin-left: 12px;">
@@ -7460,14 +8464,13 @@ button#menuToggle,
                                         <h3 style="margin: 0 0 6px 0; color: white; font-size: 24px; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">${user.name || 'User'}</h3>
                                         <p style="margin: 0 0 10px 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">${user.email || ''}</p>
                                         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); color: white; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(255, 255, 255, 0.3);">
-                                            <span style="font-size: 14px;">${currentUser.userType === 'admin' ? '👑' : '💼'}</span>
                                             ${currentUser.userType === 'admin' ? 'Administrator' : 'Cashier'}
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Profile Form Section -->
-                                <div style="padding: 32px 40px;">
+                                <div style="padding: 32px 24px;">
                                     <h4 style="margin: 0 0 24px 0; color: #1e293b; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                                         <i class="fas fa-user-edit" style="color: #8b5cf6;"></i>
                                         Edit Profile Information
@@ -7500,7 +8503,7 @@ button#menuToggle,
                             <div class="security-card" style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); animation: slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;">
                                 
                                 <!-- Security Header Section -->
-                                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 32px 40px; position: relative;">
+                                <div class="account-card-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 32px 24px; position: relative;">
                                     <div style="text-align: center; width: 100%; max-width: 100%;">
                                         <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
                                             <i class="fas fa-shield-alt" style="font-size: 26px; color: white;"></i>
@@ -7511,7 +8514,7 @@ button#menuToggle,
                                 </div>
                                 
                                 <!-- Security Form Section -->
-                                <div style="padding: 32px 40px;">
+                                <div style="padding: 32px 24px;">
                                     <button type="button" id="changePasswordBtn" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
                                         <i class="fas fa-key"></i> Change Password
                                     </button>
@@ -7546,6 +8549,60 @@ button#menuToggle,
                                                     <i class="fas fa-save"></i> Save Password
                                                 </button>
                                             </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- POS System Reset Card -->
+                            <div class="pos-reset-card" style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #fecaca; border-radius: 16px; padding: 0; box-shadow: 0 4px 20px rgba(220, 38, 38, 0.08); animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;">
+                                
+                                <!-- Reset Header -->
+                                <div class="account-card-header" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 32px 24px; position: relative;">
+                                    <div style="text-align: center; width: 100%; max-width: 100%;">
+                                        <div style="width: 60px; height: 60px; margin: 0 auto 16px auto; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                                            <i class="fas fa-redo-alt" style="font-size: 26px; color: white;"></i>
+                                        </div>
+                                        <h4 style="margin: 0 0 6px 0; color: white; font-size: 20px; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Restart POS Transaction</h4>
+                                        <p style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 13px;">Reset all statistics and charts to begin from today</p>
+                                    </div>
+                                </div>
+
+                                <!-- Reset Form Section -->
+                                <div style="padding: 32px 24px;">
+                                    <div id="posResetCurrentDate" style="display: none; margin-bottom: 16px; padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; font-size: 13px; color: #991b1b; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span id="posResetDateText">Last reset: —</span>
+                                    </div>
+                                    <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                        Restarting will reset all statistics and chart data to begin from <strong>today's date</strong>. Historical data is preserved but charts will reflect data from the restart date onward.
+                                    </p>
+                                    <button type="button" id="posResetBtn" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
+                                        <i class="fas fa-redo-alt"></i> Restart POS Transaction
+                                    </button>
+
+                                    <!-- Verification Form (hidden) -->
+                                    <form id="posResetVerifyForm" style="display: none; padding: 20px; background: #fef2f2; border-radius: 12px; border: 1px solid #fecaca; animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                        <p style="margin: 0 0 16px 0; font-size: 13px; color: #7f1d1d; font-weight: 600; text-align: center;">
+                                            <i class="fas fa-envelope"></i> Enter the 6-digit verification code sent to your email
+                                        </p>
+                                        <div class="modal-field" style="margin-bottom: 16px;">
+                                            <input id="posResetVerifyCode" type="text" placeholder="Enter 6-digit code" maxlength="6" style="width: 100%; padding: 12px 16px; border: 1px solid #fecaca; border-radius: 10px; font-size: 15px; background: white; text-align: center; font-weight: 600; letter-spacing: 4px; box-sizing: border-box;" />
+                                        </div>
+                                        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                                            <button type="button" id="posResetVerifyBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fas fa-check"></i> Verify Code
+                                            </button>
+                                            <button type="button" id="posResetResendBtn" style="flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fas fa-redo"></i> Resend
+                                            </button>
+                                        </div>
+                                        <!-- Confirm Restart (shown after code verified) -->
+                                        <div id="posResetConfirmArea" style="display: none; text-align: center; padding-top: 16px; border-top: 1px solid #fecaca; animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                            <p style="margin: 0 0 12px 0; font-size: 13px; color: #991b1b; font-weight: 600;">Code verified! Click below to confirm the restart.</p>
+                                            <button type="button" id="posResetConfirmBtn" style="padding: 12px 32px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4); display: inline-flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-power-off"></i> Confirm Restart
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
@@ -7823,6 +8880,100 @@ button#menuToggle,
                     showErrorNotification('Failed to save new password');
                 }
             });
+
+            // ── POS System Reset Handlers ──────────────────────────────
+            // Show current reset date if stored
+            (function initPosResetDateDisplay() {
+                const stored = localStorage.getItem('posResetDate');
+                const dateDiv = document.getElementById('posResetCurrentDate');
+                const dateText = document.getElementById('posResetDateText');
+                if (stored && dateDiv && dateText) {
+                    const d = new Date(`${stored}T00:00:00`);
+                    dateDiv.style.display = 'flex';
+                    dateText.textContent = 'Last reset: ' + d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                }
+            })();
+
+            document.getElementById('posResetBtn').addEventListener('click', async () => {
+                try {
+                    await apiCall('/auth/password-reset/send-code', { method: 'POST' });
+                    document.getElementById('posResetVerifyForm').style.display = 'block';
+                    document.getElementById('posResetVerifyCode').value = '';
+                    document.getElementById('posResetConfirmArea').style.display = 'none';
+                    showSuccessModal('Code Sent', 'A verification code has been sent to your email. Enter it below to proceed.');
+                } catch (error) {
+                    console.error('POS reset send code error:', error);
+                    showErrorNotification('Failed to send verification code. Please try again.');
+                }
+            });
+
+            document.getElementById('posResetVerifyBtn').addEventListener('click', async () => {
+                const code = document.getElementById('posResetVerifyCode').value.trim();
+                if (!code || code.length !== 6) {
+                    showErrorNotification('Please enter the 6-digit verification code.');
+                    return;
+                }
+                try {
+                    const res = await apiCall('/auth/password-reset/verify-code', {
+                        method: 'POST',
+                        body: JSON.stringify({ code })
+                    });
+                    if (res && res.success) {
+                        document.getElementById('posResetConfirmArea').style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('POS reset verify error:', error);
+                    showErrorNotification('Invalid or expired verification code.');
+                }
+            });
+
+            document.getElementById('posResetResendBtn').addEventListener('click', async () => {
+                try {
+                    await apiCall('/auth/password-reset/send-code', { method: 'POST' });
+                    showSuccessModal('Code Resent', 'A new verification code has been sent to your email.');
+                } catch (error) {
+                    console.error('POS reset resend error:', error);
+                    showErrorNotification('Failed to resend verification code.');
+                }
+            });
+
+            document.getElementById('posResetConfirmBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('posResetConfirmBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+
+                try {
+                    await Promise.all([
+                        apiCall('/sales/reset-all', { method: 'POST' }),
+                        apiCall('/expenses/reset-all', { method: 'POST' }),
+                    ]);
+
+                    const today = new Date();
+                    const resetDateStr = getLocalDateKey(today);
+                    localStorage.setItem('posResetDate', resetDateStr);
+
+                    // Update the displayed reset date
+                    const dateDiv = document.getElementById('posResetCurrentDate');
+                    const dateText = document.getElementById('posResetDateText');
+                    if (dateDiv && dateText) {
+                        dateDiv.style.display = 'flex';
+                        dateText.textContent = 'Last reset: ' + today.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+
+                    document.getElementById('posResetVerifyForm').style.display = 'none';
+                    document.getElementById('posResetConfirmArea').style.display = 'none';
+                    document.getElementById('posResetVerifyCode').value = '';
+
+                    await loadPage(currentPage);
+                    showSuccessModal('POS Restarted', 'Sales and expenses were reset. Products were kept.');
+                } catch (error) {
+                    console.error('POS reset error:', error);
+                    showErrorNotification('Failed to reset POS data. Please try again.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-power-off"></i> Confirm Restart';
+                }
+            });
+            // ── End POS Reset Handlers ─────────────────────────────────
 
             const hasPOSSettingsTab = !!document.getElementById('settings-tab-pos');
 
@@ -8473,15 +9624,78 @@ button#menuToggle,
             }
         }
 
-        function printReportsOnly(stats = reportPrintStats, rows = reportPrintRows) {
+        function buildReportsBodyContent(stats = reportPrintStats, rows = reportPrintRows) {
+            const safeRows = Array.isArray(rows) ? rows : [];
+            const generatedAt = new Date().toLocaleString();
+
+            return `
+                <h1 style="margin: 0 0 8px; font-size: 22px; color: #374151; font-weight: 700;">BluePOS Report Data</h1>
+                <p style="margin: 0 0 12px; color: #9ca3af; font-weight: 500;">Generated: ${generatedAt}</p>
+
+                <table class="summary" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tbody>
+                        <tr><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 700; color: #374151;">Total Sales</td><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #4b5563;">${Number(stats?.totalSales || 0).toLocaleString()}</td></tr>
+                        <tr><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 700; color: #374151;">Total Revenue</td><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #4b5563;">${formatCurrency(stats?.totalRevenue)}</td></tr>
+                        <tr><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 700; color: #374151;">Total Items Sold</td><td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; color: #4b5563;">${Number(stats?.totalItems || 0).toLocaleString()}</td></tr>
+                    </tbody>
+                </table>
+
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 8px 0 0 8px;">Date</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Item Name</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Qty</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Unit Price</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Subtotal</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Payment</th>
+                            <th style="border: 1px solid #e5e7eb; padding: 14px 12px; text-align: left; font-size: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 0 8px 8px 0;">Cashier</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${safeRows.map((row) => {
+                            const cashierName = row.user?.name || row.userName || '-';
+                            const date = row.createdAt ? new Date(row.createdAt).toLocaleString() : '-';
+                            const paymentMethod = row.paymentMethod || '-';
+                            
+                            if (!row.items || !Array.isArray(row.items) || row.items.length === 0) {
+                                return `<tr>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${date}</td>
+                                    <td colspan="5" style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: center; font-size: 13px; color: #999;">No items in this sale</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${cashierName}</td>
+                                </tr>`;
+                            }
+                            
+                            return row.items.map((item, idx) => {
+                                const itemName = item.product?.name || item.productName || 'Unknown Product';
+                                const qty = Number(item.quantity) || 0;
+                                const unitPrice = Number(item.unitPrice) || 0;
+                                const subtotal = Number(item.subtotal) || (qty * unitPrice);
+                                
+                                return `<tr>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${idx === 0 ? date : ''}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${itemName}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${qty}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${formatCurrency(unitPrice)}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${formatCurrency(subtotal)}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${idx === 0 ? paymentMethod : ''}</td>
+                                    <td style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">${idx === 0 ? cashierName : ''}</td>
+                                </tr>`;
+                            }).join('');
+                        }).join('') || '<tr><td colspan="7" style="border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; font-size: 13px; color: #6b7280;">No sales data found.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openReportsDataWindow(stats = reportPrintStats, rows = reportPrintRows) {
             const win = window.open('', '_blank', 'width=900,height=700');
             if (!win) {
                 alert('Please allow popups to print report data.');
-                return;
+                return null;
             }
 
-            const safeRows = Array.isArray(rows) ? rows : [];
-            const generatedAt = new Date().toLocaleString();
+            const reportBodyContent = buildReportsBodyContent(stats, rows);
 
             win.document.write(`
                 <!DOCTYPE html>
@@ -8494,7 +9708,8 @@ button#menuToggle,
                         body { 
                             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
                             padding: 20px; 
-                            color: #6b7280;
+                            color: #111827;
+                            background: #ffffff;
                         }
                         h1 { 
                             margin: 0 0 8px; 
@@ -8504,7 +9719,7 @@ button#menuToggle,
                         }
                         p { 
                             margin: 0 0 12px; 
-                            color: #9ca3af;
+                            color: #374151;
                             font-weight: 500;
                         }
                         table { 
@@ -8517,7 +9732,7 @@ button#menuToggle,
                             padding: 10px 12px; 
                             text-align: left; 
                             font-size: 13px;
-                            color: #6b7280;
+                            color: #111827;
                         }
                         th { 
                             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -8536,7 +9751,7 @@ button#menuToggle,
                         }
                         .summary td { 
                             font-weight: 600; 
-                            color: #4b5563;
+                            color: #1f2937;
                         }
                         .summary td:first-child {
                             font-weight: 700;
@@ -8549,69 +9764,112 @@ button#menuToggle,
                     </style>
                 </head>
                 <body>
-                    <h1>BluePOS Report Data</h1>
-                    <p>Generated: ${generatedAt}</p>
-
-                    <table class="summary">
-                        <tbody>
-                            <tr><td>Total Sales</td><td>${Number(stats?.totalSales || 0).toLocaleString()}</td></tr>
-                            <tr><td>Total Revenue</td><td>${formatCurrency(stats?.totalRevenue)}</td></tr>
-                            <tr><td>Total Items Sold</td><td>${Number(stats?.totalItems || 0).toLocaleString()}</td></tr>
-                        </tbody>
-                    </table>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Item Name</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Subtotal</th>
-                                <th>Payment</th>
-                                <th>Cashier</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${safeRows.map((row) => {
-                                const cashierName = row.user?.name || row.userName || '-';
-                                const date = row.createdAt ? new Date(row.createdAt).toLocaleString() : '-';
-                                const paymentMethod = row.paymentMethod || '-';
-                                
-                                if (!row.items || !Array.isArray(row.items) || row.items.length === 0) {
-                                    return `<tr>
-                                        <td>${date}</td>
-                                        <td colspan="5" style="text-align: center; color: #999;">No items in this sale</td>
-                                        <td>${cashierName}</td>
-                                    </tr>`;
-                                }
-                                
-                                return row.items.map((item, idx) => {
-                                    const itemName = item.product?.name || item.productName || 'Unknown Product';
-                                    const qty = Number(item.quantity) || 0;
-                                    const unitPrice = Number(item.unitPrice) || 0;
-                                    const subtotal = Number(item.subtotal) || (qty * unitPrice);
-                                    
-                                    return `<tr>
-                                        <td>${idx === 0 ? date : ''}</td>
-                                        <td>${itemName}</td>
-                                        <td style="text-align: left;">${qty}</td>
-                                        <td style="text-align: left;">${formatCurrency(unitPrice)}</td>
-                                        <td style="text-align: left;">${formatCurrency(subtotal)}</td>
-                                        <td>${idx === 0 ? paymentMethod : ''}</td>
-                                        <td>${idx === 0 ? cashierName : ''}</td>
-                                    </tr>`;
-                                }).join('');
-                            }).join('') || '<tr><td colspan="7">No sales data found.</td></tr>'}
-                        </tbody>
-                    </table>
+                    ${reportBodyContent}
                 </body>
                 </html>
             `);
 
             win.document.close();
+            return win;
+        }
+
+        function printReportsOnly(stats = reportPrintStats, rows = reportPrintRows) {
+            const win = openReportsDataWindow(stats, rows);
+            if (!win) {
+                return;
+            }
             win.focus();
             win.print();
+        }
+
+        function saveReportsAsPdf(stats = reportPrintStats, rows = reportPrintRows) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('PDF generator failed to load. Please refresh the page and try again.');
+                return;
+            }
+
+            const safeRows = Array.isArray(rows) ? rows : [];
+            const summary = stats || calculateReportStats(safeRows);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+            const pageHeight = 297;
+            const marginTop = 14;
+            const marginBottom = 14;
+            let y = marginTop;
+
+            const ensureSpace = (needed = 6) => {
+                if (y + needed > pageHeight - marginBottom) {
+                    doc.addPage();
+                    y = marginTop;
+                }
+            };
+
+            const addLine = (text, size = 10, bold = false, gap = 5) => {
+                ensureSpace(gap + 1);
+                doc.setFont('helvetica', bold ? 'bold' : 'normal');
+                doc.setFontSize(size);
+                doc.text(String(text), 12, y);
+                y += gap;
+            };
+
+            const truncate = (value, max) => {
+                const text = String(value || '');
+                return text.length > max ? `${text.slice(0, max - 1)}.` : text;
+            };
+
+            const pdfMoney = (value) => String(formatCurrency(value)).replace(/₱/g, 'PHP ');
+
+            addLine('BluePOS Report Data', 16, true, 8);
+            addLine(`Generated: ${new Date().toLocaleString()}`, 9, false, 6);
+            if (reportDateFrom || reportDateTo) {
+                addLine(`Date Filter: ${reportDateFrom || 'Any'} to ${reportDateTo || 'Any'}`, 9, false, 6);
+            }
+            y += 2;
+
+            addLine(`Total Sales: ${Number(summary.totalSales || 0).toLocaleString()}`, 10, true, 6);
+            addLine(`Total Revenue: ${pdfMoney(summary.totalRevenue || 0)}`, 10, true, 6);
+            addLine(`Total Items Sold: ${Number(summary.totalItems || 0).toLocaleString()}`, 10, true, 8);
+
+            doc.setDrawColor(200, 200, 200);
+            doc.line(12, y - 2, 198, y - 2);
+            y += 3;
+
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(8);
+            addLine('Date              Item                         Qty      Unit Price     Subtotal     Payment    Cashier', 8, true, 5);
+            doc.setFont('courier', 'normal');
+
+            if (safeRows.length === 0) {
+                addLine('No sales data found.', 9, false, 6);
+            } else {
+                safeRows.forEach((row) => {
+                    const cashierName = truncate(row.user?.name || row.userName || '-', 16);
+                    const date = row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-';
+                    const paymentMethod = truncate(row.paymentMethod || '-', 10);
+
+                    if (!row.items || !Array.isArray(row.items) || row.items.length === 0) {
+                        const line = `${truncate(date, 16).padEnd(16)} ${'No items in this sale'.padEnd(28)} ${''.padEnd(6)} ${''.padEnd(13)} ${''.padEnd(12)} ${paymentMethod.padEnd(10)} ${cashierName}`;
+                        addLine(line, 8, false, 5);
+                        return;
+                    }
+
+                    row.items.forEach((item, index) => {
+                        const itemName = truncate(item.product?.name || item.productName || 'Unknown Product', 28);
+                        const qty = Number(item.quantity) || 0;
+                        const unitPrice = Number(item.unitPrice) || 0;
+                        const subtotal = Number(item.subtotal) || (qty * unitPrice);
+
+                        const line = `${(index === 0 ? truncate(date, 16) : '').padEnd(16)} ${itemName.padEnd(28)} ${String(qty).padStart(3).padEnd(6)} ${truncate(pdfMoney(unitPrice), 12).padStart(12)} ${truncate(pdfMoney(subtotal), 12).padStart(12)} ${(index === 0 ? paymentMethod : '').padEnd(10)} ${(index === 0 ? cashierName : '')}`;
+                        addLine(line, 8, false, 5);
+                    });
+
+                    y += 1;
+                });
+            }
+
+            const filename = `BluePOS-Report-${new Date().toISOString().slice(0, 10)}.pdf`;
+            doc.save(filename);
         }
 
         // Initial load

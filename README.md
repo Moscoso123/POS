@@ -44,6 +44,33 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## AI Assistant Setup
+
+The dashboard includes an in-app AI chat assistant. It can answer app-usage questions and business monitoring questions like revenue today, top cashier, top products, low-stock items, and similar store-status prompts.
+
+To enable live AI API responses:
+
+```bash
+# 1. Copy the env template
+copy .env.example .env
+
+# 2. Add your OpenAI credentials in .env
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Then restart the server:
+
+```bash
+npm run start:dev
+```
+
+Notes:
+
+- If `OPENAI_API_KEY` is not set, the assistant still works using the local fallback logic built into the app.
+- The assistant endpoint is served from the backend at `/api/chat/assistant`.
+- The assistant can also use live POS data for monitoring-style questions.
+
 ## Run tests
 
 ```bash

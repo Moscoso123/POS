@@ -196,6 +196,12 @@ export class ProductsService {
     await this.productRepository.save(product);
   }
 
+  async resetAll(): Promise<{ success: boolean; message: string }> {
+    await this.inventoryTransactionRepository.createQueryBuilder().delete().execute();
+    await this.productRepository.createQueryBuilder().delete().execute();
+    return { success: true, message: 'All products and inventory records have been deleted.' };
+  }
+
   async getDashboardStats(): Promise<any> {
     const totalProducts = await this.productRepository
       .createQueryBuilder('product')

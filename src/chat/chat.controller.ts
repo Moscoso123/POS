@@ -166,4 +166,107 @@ export class ChatController {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Post('assistant')
+  async assistantGuide(
+    @Request() req,
+    @Body() body: {
+      query?: string;
+      message?: string;
+      history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+    },
+  ) {
+    try {
+      let userId = req.user?.id;
+
+      if (!userId && req.user?.email) {
+        const user = await this.userRepository.findOne({
+          where: { email: req.user.email },
+        });
+        if (!user) {
+          throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+        }
+        userId = user.id;
+      }
+
+      if (!userId) {
+        throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+      }
+
+      const message = (body?.message || body?.query || '').trim();
+      if (!message) {
+        throw new HttpException('Message is required', HttpStatus.BAD_REQUEST);
+      }
+
+      if (message.length > 2000) {
+        throw new HttpException('Message is too long', HttpStatus.BAD_REQUEST);
+      }
+
+      const result = await this.chatService.getAssistantChatReply(
+        userId,
+        message,
+        body?.history || [],
+        req.user?.userType,
+      );
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        error?.message || 'Failed to get assistant guidance',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('assistant/feedback')
+  async assistantFeedback(
+    @Request() req,
+    @Body() body: { prompt: string; correction?: string; feedbackScore?: number },
+  ) {
+    try {
+      let userId = req.user?.id;
+
+      if (!userId && req.user?.email) {
+        const user = await this.userRepository.findOne({
+          where: { email: req.user.email },
+        });
+        if (!user) {
+          throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+        }
+        userId = user.id;
+      }
+
+      if (!userId) {
+        throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+      }
+
+      const result = await this.chatService.submitAssistantFeedback({
+        userId,
+        prompt: body?.prompt || '',
+        correction: body?.correction,
+        feedbackScore: body?.feedbackScore,
+      });
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        error?.message || 'Failed to save assistant feedback',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 }
