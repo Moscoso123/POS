@@ -6300,6 +6300,25 @@ button#menuToggle,
             document.getElementById('productCost').value = product?.cost_price ?? 0;
             document.getElementById('productStock').value = product?.stock_quantity ?? 0;
             document.getElementById('productMinStock').value = product?.min_stock_level ?? 5;
+            
+            // Set expiration fields
+            const expirationTypeSelect = document.getElementById('productExpirationType');
+            const expirationDateInput = document.getElementById('productExpirationDate');
+            const expirationDateField = document.getElementById('productExpirationDateField');
+            
+            if (product?.expiration_date) {
+                if (expirationTypeSelect) expirationTypeSelect.value = 'date';
+                if (expirationDateInput) {
+                    const expDate = new Date(product.expiration_date);
+                    expirationDateInput.value = expDate.toISOString().split('T')[0];
+                }
+                if (expirationDateField) expirationDateField.style.display = '';
+            } else {
+                if (expirationTypeSelect) expirationTypeSelect.value = 'none';
+                if (expirationDateField) expirationDateField.style.display = 'none';
+                if (expirationDateInput) expirationDateInput.value = '';
+            }
+            
             if (productCategorySearch) {
                 productCategorySearch.value = '';
             }
@@ -6334,6 +6353,8 @@ button#menuToggle,
             const formData = new FormData(productForm);
             const selectedCategory = String(formData.get('category') || '').trim();
             const typedCategory = String(productCategorySearch?.value || '').trim();
+            const expirationDateValue = String(formData.get('expiration_date') || '').trim();
+            
             const payload = {
                 name: String(formData.get('name') || '').trim(),
                 category: selectedCategory || typedCategory || undefined,
@@ -6342,6 +6363,12 @@ button#menuToggle,
                 stock_quantity: Number(formData.get('stock_quantity') || 0),
                 min_stock_level: Number(formData.get('min_stock_level') || 0),
             };
+            
+            // Include expiration_date if provided
+            if (expirationDateValue) {
+                payload.expiration_date = expirationDateValue;
+            }
+            
             const productId = String(formData.get('id') || '').trim();
             const mode = productForm.dataset.mode || 'create';
 
@@ -6363,6 +6390,7 @@ button#menuToggle,
                             price: payload.price,
                             cost_price: payload.cost_price,
                             min_stock_level: payload.min_stock_level,
+                            expiration_date: payload.expiration_date,
                         }),
                     });
 
@@ -6603,6 +6631,48 @@ button#menuToggle,
                         <div style="height: 300px;">
                             <canvas id="categoryInventoryChart"></canvas>
                         </div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-bottom: 20px; border:1px solid #dbeafe; box-shadow:0 10px 26px rgba(30, 64, 175, 0.08);">
+                    <h3 style="margin-bottom: 6px;">🗓️ Product Expiration Status</h3>
+                    <p style="font-size:13px; color:var(--text-light); margin:0 0 16px 0;">Products color-coded by expiration timeline: Green (>30 days), Yellow (14-30 days), Orange (7-14 days), Red (<7 days or expired).</p>
+                    
+                    <!-- Filter Controls (Top Section) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <!-- Search Box -->
+                        <div>
+                            <input type="text" id="expirationSearchInput" placeholder="🔍 Search products by name..." style="width: 100%; padding: 10px 12px; border: 1px solid #dbeafe; border-radius: 8px; background: #f8fafc; box-sizing: border-box; font-size: 13px;" />
+                        </div>
+                        
+                        <!-- Status Filter Dropdown -->
+                        <div>
+                            <select id="expirationStatusFilter" style="width: 100%; padding: 10px 12px; border: 1px solid #dbeafe; border-radius: 8px; background: #f8fafc; box-sizing: border-box; font-size: 13px; font-weight: 500; color: #0f172a; cursor: pointer;">
+                                <option value="all">📊 All Products</option>
+                                <option value="red">🔴 Expired / Critical (< 7 days)</option>
+                                <option value="orange">🟠 Warning (7-14 days)</option>
+                                <option value="green">🟢 Not Expired (> 30 days)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Products Table -->
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;" id="expirationProductsTable">
+                            <thead style="background: #f1f5f9; border-bottom: 2px solid #dbeafe;">
+                                <tr>
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: #0f172a; font-size: 13px;">Product Name</th>
+                                    <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: #0f172a; font-size: 13px;">Stock</th>
+                                    <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: #0f172a; font-size: 13px;">Expiration Date</th>
+                                    <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: #0f172a; font-size: 13px;">Days Left</th>
+                                    <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: #0f172a; font-size: 13px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expirationProductsList">
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td colspan="5" style="padding: 40px 16px; text-align: center; color: #64748b; font-size: 13px;">Loading products...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -6860,6 +6930,156 @@ button#menuToggle,
                 } catch (error) {
                     inventoryChartEl.parentElement.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;padding:40px;">Unable to load inventory data.</p>';
                 }
+            }
+
+            // Load and render expiration products with filtering and search
+            try {
+                const expirationData = await apiCall('/products/expiration-status', { redirectOnUnauthorized: false });
+                console.log('Expiration Data from API:', expirationData); // Debug log
+                
+                if (expirationData) {
+                    const productsList = document.getElementById('expirationProductsList');
+                    
+                    // Collect all products from all categories
+                    let allProducts = [];
+                    const categories = [
+                        { key: 'red', color: '#dc2626', label: '🔴 Critical (<7 days)' },
+                        { key: 'orange', color: '#f97316', label: '🟠 Alert (7-14 days)' },
+                        { key: 'yellow', color: '#eab308', label: '🟡 Warning (14-30 days)' },
+                        { key: 'green', color: '#10b981', label: '🟢 Good (>30 days)' }
+                    ];
+                    
+                    categories.forEach(cat => {
+                        if (expirationData[cat.key]?.products) {
+                            expirationData[cat.key].products.forEach(product => {
+                                allProducts.push({ ...product, status: cat.key, statusColor: cat.color, statusLabel: cat.label });
+                            });
+                        }
+                    });
+
+                    // Remove duplicate products - keep only the first occurrence of each product ID
+                    const seenIds = new Set();
+                    allProducts = allProducts.filter(product => {
+                        if (seenIds.has(product.id)) {
+                            return false; // Skip if we've already seen this product ID
+                        }
+                        seenIds.add(product.id);
+                        return true; // Keep this product
+                    });
+
+                    console.log('All Products after processing:', allProducts); // Debug log
+                    console.log('API Response Keys:', Object.keys(expirationData)); // Debug log
+
+                    // Sort products by expiration date (earliest first)
+                    allProducts.sort((a, b) => {
+                        if (!a.expiration_date) return 1;
+                        if (!b.expiration_date) return 1;
+                        return new Date(a.expiration_date) - new Date(b.expiration_date);
+                    });
+
+                    // Function to render products with filter
+                    function renderProducts(filterStatus = 'all', searchTerm = '') {
+                        if (allProducts.length === 0) {
+                            productsList.innerHTML = '<tr style="border-bottom: 1px solid #e2e8f0;"><td colspan="5" style="padding: 40px 16px; text-align: center; color: #64748b; font-size: 13px;">No products with expiration dates set.</td></tr>';
+                            return;
+                        }
+
+                        let filtered = allProducts;
+                        
+                        // Apply status filter
+                        if (filterStatus !== 'all') {
+                            filtered = filtered.filter(p => p.status === filterStatus);
+                        }
+                        
+                        // Apply search filter
+                        if (searchTerm.trim()) {
+                            const term = searchTerm.toLowerCase();
+                            filtered = filtered.filter(p => p.name.toLowerCase().includes(term));
+                        }
+
+                        if (filtered.length === 0) {
+                            productsList.innerHTML = '<tr style="border-bottom: 1px solid #e2e8f0;"><td colspan="5" style="padding: 40px 16px; text-align: center; color: #64748b; font-size: 13px;">No products match your filter.</td></tr>';
+                            return;
+                        }
+
+                        productsList.innerHTML = filtered.map(product => {
+                            const daysUntilExpiration = product.expiration_date ? Math.ceil((new Date(product.expiration_date) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                            const expDate = product.expiration_date ? new Date(product.expiration_date).toLocaleDateString() : '-';
+                            
+                            // Determine status color and display
+                            let statusBgColor = '#10b981';
+                            let statusText = 'Good';
+                            let rowBgColor = '#ffffff';
+                            
+                            if (daysUntilExpiration === null) {
+                                statusText = 'No Date';
+                                statusBgColor = '#94a3b8';
+                                rowBgColor = '#f8fafc';
+                            } else if (daysUntilExpiration < 0) {
+                                statusText = '⚠️ Expired';
+                                statusBgColor = '#dc2626';
+                                rowBgColor = '#fee2e2'; // Light red background
+                            } else if (daysUntilExpiration < 7) {
+                                statusText = '🔴 Critical';
+                                statusBgColor = '#dc2626';
+                                rowBgColor = '#fee2e2'; // Light red background
+                            } else if (daysUntilExpiration < 14) {
+                                statusText = '🟠 Warning';
+                                statusBgColor = '#f97316';
+                                rowBgColor = '#fed7aa'; // Light orange background
+                            } else if (daysUntilExpiration < 30) {
+                                statusText = '🟡 Alert';
+                                statusBgColor = '#eab308';
+                                rowBgColor = '#fef3c7'; // Light yellow background
+                            } else {
+                                rowBgColor = '#d1fae5'; // Light green background
+                            }
+                            
+                            const daysText = daysUntilExpiration === null ? '-' : daysUntilExpiration < 0 ? '0' : daysUntilExpiration;
+                            
+                            return `
+                                <tr style="border-bottom: 1px solid #e2e8f0; background: ${rowBgColor}; transition: all 0.2s ease; font-weight: 500;" onmouseover="this.style.opacity='0.8'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';" onmouseout="this.style.opacity='1'; this.style.boxShadow='none';">
+                                    <td style="padding: 14px 16px; color: #0f172a; font-weight: 600; font-size: 13px;">${escapeHtml(product.name || 'Unknown Product')}</td>
+                                    <td style="padding: 14px 16px; text-align: center; color: #475569; font-size: 13px; font-weight: 500;">${product.stock_quantity || 0}</td>
+                                    <td style="padding: 14px 16px; text-align: center; color: #0f172a; font-size: 13px; font-weight: 500;">${expDate}</td>
+                                    <td style="padding: 14px 16px; text-align: center;">
+                                        <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; background: ${daysUntilExpiration && daysUntilExpiration < 7 ? '#fecaca' : daysUntilExpiration && daysUntilExpiration < 14 ? '#fed7aa' : daysUntilExpiration && daysUntilExpiration < 30 ? '#fef3c7' : '#d1fae5'}; color: #0f172a; font-weight: 600; font-size: 12px;">${daysText} ${daysUntilExpiration !== null && daysUntilExpiration !== 0 ? 'days' : ''}</span>
+                                    </td>
+                                    <td style="padding: 14px 16px; text-align: center;">
+                                        <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; background: ${statusBgColor}; color: white; font-weight: 600; font-size: 12px;">${statusText}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+
+                    // Track active filter
+                    let activeFilter = 'all';
+
+                    // Initial render
+                    renderProducts('all', '');
+
+                    // Add event listener for select dropdown filter
+                    const statusFilterSelect = document.getElementById('expirationStatusFilter');
+                    if (statusFilterSelect) {
+                        statusFilterSelect.addEventListener('change', (e) => {
+                            activeFilter = e.target.value;
+                            const searchTerm = document.getElementById('expirationSearchInput')?.value || '';
+                            renderProducts(activeFilter, searchTerm);
+                        });
+                    }
+
+                    // Add search functionality
+                    const searchInput = document.getElementById('expirationSearchInput');
+                    if (searchInput) {
+                        searchInput.addEventListener('input', (e) => {
+                            renderProducts(activeFilter, e.target.value);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load expiration data:', error);
+                document.getElementById('expirationProductsList').innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-light); grid-column: 1/-1;">Failed to load expiration data.</div>';
             }
 
             // Render Recent Transactions with Pagination
@@ -7407,16 +7627,27 @@ button#menuToggle,
                 const tbody = document.getElementById('invTableBody');
                 const cardView = document.getElementById('invCardView');
                 if (!pageItems.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-light); padding: 20px;">No products found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-light); padding: 20px;">No products found.</td></tr>';
                     cardView.innerHTML = '<div style="text-align:center; color: var(--text-light); padding: 20px;">No products found.</div>';
                 } else {
-                    tbody.innerHTML = pageItems.map(p => `
+                    tbody.innerHTML = pageItems.map(p => {
+                        const expirationDate = p.expiration_date ? new Date(p.expiration_date).toLocaleDateString() : '-';
+                        const expirationColor = !p.expiration_date ? '#64748b' : (() => {
+                            const daysLeft = Math.ceil((new Date(p.expiration_date) - new Date()) / (1000 * 60 * 60 * 24));
+                            if (daysLeft < 0) return '#dc2626'; // Red - expired
+                            if (daysLeft < 7) return '#dc2626'; // Red - critical
+                            if (daysLeft < 14) return '#f97316'; // Orange - alert
+                            if (daysLeft < 30) return '#eab308'; // Yellow - warning
+                            return '#10b981'; // Green - good
+                        })();
+                        return `
                         <tr data-product-row="${p.id}">
                             <td>${p.name}</td>
                             <td>${p.category || '-'}</td>
                             <td>${formatCurrency(p.price)}</td>
                             <td>${p.stock_quantity}</td>
                             <td>${p.stock_quantity <= p.min_stock_level ? '<span class="badge badge-warning">Low Stock</span>' : '<span class="badge badge-success">In Stock</span>'}</td>
+                            <td><span style="color: ${expirationColor}; font-weight: 600;">${expirationDate}</span></td>
                             <td>
                                 <div class="actions-wrap">
                                     <button class="action-btn edit" onclick="editProduct('${p.id}')" ${isAdmin ? '' : 'disabled'}><i class="fas fa-edit"></i> Edit</button>
@@ -7424,12 +7655,22 @@ button#menuToggle,
                                 </div>
                             </td>
                         </tr>
-                    `).join('');
+                    `;
+                    }).join('');
 
                     cardView.innerHTML = pageItems.map(p => {
                         const statusBadge = p.stock_quantity <= p.min_stock_level
                             ? '<span class="badge badge-warning">Low Stock</span>'
                             : '<span class="badge badge-success">In Stock</span>';
+                        const expirationDate = p.expiration_date ? new Date(p.expiration_date).toLocaleDateString() : 'No date';
+                        const expirationColor = !p.expiration_date ? '#64748b' : (() => {
+                            const daysLeft = Math.ceil((new Date(p.expiration_date) - new Date()) / (1000 * 60 * 60 * 24));
+                            if (daysLeft < 0) return '#dc2626'; // Red - expired
+                            if (daysLeft < 7) return '#dc2626'; // Red - critical
+                            if (daysLeft < 14) return '#f97316'; // Orange - alert
+                            if (daysLeft < 30) return '#eab308'; // Yellow - warning
+                            return '#10b981'; // Green - good
+                        })();
                         return `
                         <div class="inv-product-card">
                             <div class="inv-card-top">
@@ -7447,6 +7688,10 @@ button#menuToggle,
                                 <div class="inv-card-stat">
                                     <div class="inv-card-stat-label">Stock</div>
                                     <div class="inv-card-stat-value">${p.stock_quantity}</div>
+                                </div>
+                                <div class="inv-card-stat">
+                                    <div class="inv-card-stat-label">Expiration</div>
+                                    <div class="inv-card-stat-value" style="color: ${expirationColor}; font-weight: 600; font-size: 12px;">${expirationDate}</div>
                                 </div>
                             </div>
                             <div class="inv-card-actions">
@@ -7517,7 +7762,7 @@ button#menuToggle,
                     </div>
                     <table class="data-table inv-table-desktop">
                         <thead>
-                            <tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+                            <tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Expiration Date</th><th>Actions</th></tr>
                         </thead>
                         <tbody id="invTableBody"></tbody>
                     </table>
@@ -8045,6 +8290,68 @@ button#menuToggle,
                     }
                 });
             });
+
+                // Add event listeners for edit buttons
+                document.querySelectorAll('.expense-edit-btn').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const expenseId = button.dataset.id;
+                        const expenseTitle = decodeURIComponent(button.dataset.title || '');
+                        const expenseAmount = button.dataset.amount || '';
+                        // Show the modal
+                        const modal = document.getElementById('editExpenseModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                            modal.classList.add('active');
+                        }
+                        // Fill the form fields
+                        document.getElementById('editExpenseId').value = expenseId;
+                        document.getElementById('editExpenseTitle').value = expenseTitle;
+                        document.getElementById('editExpenseAmount').value = expenseAmount;
+                    });
+                });
+
+                // Close and cancel buttons for edit modal
+                const closeEditBtn = document.getElementById('closeEditExpenseModal');
+                const cancelEditBtn = document.getElementById('cancelEditExpenseBtn');
+                const editModal = document.getElementById('editExpenseModal');
+                [closeEditBtn, cancelEditBtn].forEach((btn) => {
+                    if (btn) {
+                        btn.addEventListener('click', () => {
+                            if (editModal) {
+                                editModal.style.display = 'none';
+                                editModal.classList.remove('active');
+                            }
+                        });
+                    }
+                });
+
+                // Handle edit expense form submit
+                const editExpenseForm = document.getElementById('editExpenseForm');
+                if (editExpenseForm) {
+                    editExpenseForm.addEventListener('submit', async (event) => {
+                        event.preventDefault();
+                        const id = document.getElementById('editExpenseId').value;
+                        const title = document.getElementById('editExpenseTitle').value.trim();
+                        const amount = Number(document.getElementById('editExpenseAmount').value);
+                        if (!title) return showErrorNotification('Please enter an expense title.');
+                        if (!Number.isFinite(amount) || amount <= 0) return showErrorNotification('Please enter a valid expense amount.');
+                        try {
+                            await apiCall(`/expenses/${id}`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ title, amount }),
+                                redirectOnUnauthorized: false,
+                            });
+                            showSuccessModal('Expense updated successfully.');
+                            if (editModal) {
+                                editModal.style.display = 'none';
+                                editModal.classList.remove('active');
+                            }
+                            await loadExpenses();
+                        } catch (error) {
+                            showErrorNotification(error.message || 'Failed to update expense.');
+                        }
+                    });
+                }
         }
 
         // Staff Management

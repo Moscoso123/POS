@@ -35,6 +35,9 @@ export class Product {
   @Column({ name: 'image_url', nullable: true })
   image_url: string;
 
+  @Column({ name: 'expiration_date', type: 'datetime', nullable: true })
+  expiration_date: Date | null;
+
   @Column({ name: 'is_active', default: true })
   is_active: boolean;
 

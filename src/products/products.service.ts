@@ -226,4 +226,61 @@ export class ProductsService {
       totalStockValue: totalStockValue?.total || 0,
     };
   }
+
+  async getExpirationStatus(): Promise<any> {
+    const now = new Date();
+    const green7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const yellow14Days = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const orange30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const [greenProducts, yellowProducts, orangeProducts, redProducts] = await Promise.all([
+      // Green: More than 30 days (with expiration date set)
+      this.productRepository
+        .createQueryBuilder('product')
+        .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+        .andWhere('product.expiration_date IS NOT NULL AND product.expiration_date > :orange30Days', { orange30Days })
+        .getMany(),
+      // Yellow: 14-30 days
+      this.productRepository
+        .createQueryBuilder('product')
+        .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+        .andWhere('product.expiration_date > :yellow14Days AND product.expiration_date <= :orange30Days', { yellow14Days, orange30Days })
+        .getMany(),
+      // Orange: 7-14 days
+      this.productRepository
+        .createQueryBuilder('product')
+        .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+        .andWhere('product.expiration_date > :green7Days AND product.expiration_date <= :yellow14Days', { green7Days, yellow14Days })
+        .getMany(),
+      // Red: Less than 7 days or already expired
+      this.productRepository
+        .createQueryBuilder('product')
+        .where('product.is_active = :isActive OR product.is_active IS NULL', { isActive: true })
+        .andWhere('product.expiration_date IS NOT NULL AND product.expiration_date <= :green7Days', { green7Days })
+        .getMany(),
+    ]);
+
+    return {
+      green: {
+        count: greenProducts.length,
+        quantity: greenProducts.reduce((sum, p) => sum + Number(p.stock_quantity || 0), 0),
+        products: greenProducts.slice(0, 5),
+      },
+      yellow: {
+        count: yellowProducts.length,
+        quantity: yellowProducts.reduce((sum, p) => sum + Number(p.stock_quantity || 0), 0),
+        products: yellowProducts.slice(0, 5),
+      },
+      orange: {
+        count: orangeProducts.length,
+        quantity: orangeProducts.reduce((sum, p) => sum + Number(p.stock_quantity || 0), 0),
+        products: orangeProducts.slice(0, 5),
+      },
+      red: {
+        count: redProducts.length,
+        quantity: redProducts.reduce((sum, p) => sum + Number(p.stock_quantity || 0), 0),
+        products: redProducts.slice(0, 5),
+      },
+    };
+  }
 }

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, MaxLength, IsDateString } from 'class-validator';
 
 export class CreateProductDto {
   @IsOptional()
@@ -48,10 +48,13 @@ export class CreateProductDto {
   image_url?: string;
 
   @IsOptional()
+  @IsDateString()
+  expiration_date?: string;
+
+  @IsOptional()
   @IsBoolean()
   is_active?: boolean;
 }
-
 export class UpdateProductDto {
   @IsOptional()
   @IsString()
@@ -96,6 +99,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   image_url?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expiration_date?: string;
 
   @IsOptional()
   @IsBoolean()

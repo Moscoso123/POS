@@ -44,6 +44,11 @@ export class ProductsController {
     return this.productsService.getInventoryChartData(numDays);
   }
 
+  @Get('expiration-status')
+  getExpirationStatus() {
+    return this.productsService.getExpirationStatus();
+  }
+
   @Post('inventory/adjust')
   @UseGuards(RolesGuard)
   @Roles('admin')

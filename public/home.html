@@ -979,7 +979,11 @@
                 </div>
                 <div class="chart-container">
                     <h3 style="margin-bottom: 20px; font-weight:600;">📊 Sales Performance (Last 7 Days)</h3>
-                    <canvas id="weeklySalesChart" style="max-height: 280px; width:100%"></canvas>
+                    <canvas id="weeklySalesChart" style="max-height: 220px; width:100%"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 20px; font-weight:600;">⏳ Expiring Products (Next 30 Days)</h3>
+                    <canvas id="expirationChart" style="max-height: 220px; width:100%"></canvas>
                 </div>
                 <div class="recent-sales">
                     <table style="min-width: 500px;">
@@ -994,8 +998,8 @@
                 </div>
             `;
             document.getElementById('pageContent').innerHTML = html;
-            
-            // Initialize Chart.js after DOM ready
+
+            // Sales Chart
             const ctx = document.getElementById('weeklySalesChart')?.getContext('2d');
             if(ctx) {
                 if(salesChart) salesChart.destroy();
@@ -1019,6 +1023,37 @@
                         responsive: true,
                         maintainAspectRatio: true,
                         plugins: { legend: { position: 'top' } }
+                    }
+                });
+            }
+
+            // Expiration Chart (sample data)
+            const expCtx = document.getElementById('expirationChart')?.getContext('2d');
+            if(expCtx) {
+                new Chart(expCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Milk', 'Croissant', 'Sandwich', 'Muffin', 'Latte'],
+                        datasets: [{
+                            label: 'Expiring Qty',
+                            data: [12, 8, 5, 3, 2],
+                            backgroundColor: [
+                                '#f59e0b',
+                                '#ef4444',
+                                '#3b82f6',
+                                '#10b981',
+                                '#a21caf'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Quantity' } },
+                            x: { title: { display: true, text: 'Product' } }
+                        }
                     }
                 });
             }
