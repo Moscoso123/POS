@@ -53,6 +53,11 @@ function sanitizeAndValidateImageUpload(file: UploadValidationFile): string {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Get('businesses')
+  async getBusinesses() {
+    return this.authService.getAvailableBusinessNames();
+  }
+
   @Post('register')
   @UseInterceptors(FileInterceptor('profilePic', {
     storage: diskStorage({

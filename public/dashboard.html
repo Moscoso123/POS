@@ -821,6 +821,25 @@ body.sidebar-collapsed #menuToggle,
     width: 100%;
 }
 
+.nav-reservation-badge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff !important;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.nav-reservation-badge.show {
+    display: inline-flex;
+}
+
 .nav-item:hover {
     background: linear-gradient(135deg, #eef2ff 0%, #f0f4ff 100%);
     color: var(--primary);
@@ -2432,6 +2451,10 @@ input[type="radio"]:focus {
     backdrop-filter: blur(8px);
 }
 
+.reservation-approvals-wrap {
+    width: 100%;
+}
+
 .data-table {
     width: 100%;
     border-collapse: separate;
@@ -3296,6 +3319,20 @@ input[type="radio"]:focus {
     .table-wrap {
         width: 97%;
     }
+
+    .reservation-approvals-wrap {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .reservation-approvals-wrap .mobile-cards-container {
+        margin-top: 0;
+        padding-top: 0;
+    }
     
     .pos-container {
         width: 97%;
@@ -4076,7 +4113,7 @@ button#menuToggle,
     <div class="app">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2><span><i class="fas fa-cash-register"></i></span><span>SYLEN_POS</span></h2>
+                <h2><span><i class="fas fa-cash-register"></i></span><span>FRE_POS</span></h2>
                 <button class="sidebar-close-btn" id="sidebarCloseBtn" type="button" title="Close sidebar">
                     <span style="font-size:18px;"><i class="fas fa-chevron-left"></i></span>
                 </button>
@@ -4110,6 +4147,11 @@ button#menuToggle,
                 <div class="nav-item" data-page="sales">
                     <span><i class="fas fa-receipt"></i></span>
                     <span>Sales History</span>
+                </div>
+                <div class="nav-item" data-page="product-reservations">
+                    <span><i class="fas fa-clipboard-check"></i></span>
+                    <span class="nav-reservation-badge" id="productReservationNavBadge">0</span>
+                    <span>Product Reservations</span>
                 </div>
                 <div class="nav-item" data-page="staff">
                     <span><i class="fas fa-users"></i></span>
@@ -4212,6 +4254,17 @@ button#menuToggle,
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="modal-field">
+                    <label for="productExpirationType">Expiration</label>
+                    <select id="productExpirationType" name="expiration_type">
+                        <option value="none">No Expiration</option>
+                        <option value="date">With Expiration</option>
+                    </select>
+                </div>
+                <div class="modal-field" id="productExpirationDateField" style="display:none;">
+                    <label for="productExpirationDate">Expiration Date</label>
+                    <input id="productExpirationDate" name="expiration_date" type="date" />
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" id="cancelProductModal">Cancel</button>
@@ -4391,6 +4444,20 @@ button#menuToggle,
     </div>
 
     <script>
+                // Expiration select logic for Add Product modal
+                document.addEventListener('DOMContentLoaded', function() {
+                    const expirationType = document.getElementById('productExpirationType');
+                    const expirationDateField = document.getElementById('productExpirationDateField');
+                    if (expirationType && expirationDateField) {
+                        expirationType.addEventListener('change', function() {
+                            if (expirationType.value === 'date') {
+                                expirationDateField.style.display = '';
+                            } else {
+                                expirationDateField.style.display = 'none';
+                            }
+                        });
+                    }
+                });
         const API_URL = window.location.origin + '/api';
         let token = localStorage.getItem('access_token');
         let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -4424,6 +4491,7 @@ button#menuToggle,
         let productCategoryOptions = [];
         let filteredProductCategoryOptions = [];
         let currentPage = 'dashboard';
+        let currentProductReservationFilter = 'all';
         let notificationAdjustments = {};
         const productModal = document.getElementById('productModal');
         const productForm = document.getElementById('productForm');
@@ -4460,10 +4528,12 @@ button#menuToggle,
         const loginSidebarRole = document.getElementById('loginSidebarRole');
         const loginSidebarBusiness = document.getElementById('loginSidebarBusiness');
         const loginSidebarInitials = document.getElementById('loginSidebarInitials');
+        const productReservationNavBadge = document.getElementById('productReservationNavBadge');
 
         function applySidebarRoleVisibility() {
             const staffNavItem = document.querySelector('.nav-item[data-page="staff"]');
             const productsNavItem = document.querySelector('.nav-item[data-page="products"]');
+            const productReservationsNavItem = document.querySelector('.nav-item[data-page="product-reservations"]');
             if (currentUser.userType === 'staff') {
                 if (staffNavItem) {
                     staffNavItem.remove();
@@ -4471,6 +4541,13 @@ button#menuToggle,
                 if (productsNavItem) {
                     productsNavItem.remove();
                 }
+                if (productReservationsNavItem) {
+                    productReservationsNavItem.remove();
+                }
+            }
+
+            if (currentUser.userType !== 'admin' && productReservationsNavItem) {
+                productReservationsNavItem.remove();
             }
         }
 
@@ -4959,6 +5036,258 @@ button#menuToggle,
             } catch {
                 notifListContainer.innerHTML = '<div class="notif-text">Unable to load notifications.</div>';
             }
+        }
+
+        async function refreshPendingProductReservationCount() {
+            if (currentUser.userType !== 'admin' || !productReservationNavBadge) {
+                return;
+            }
+
+            try {
+                const result = await apiCall('/product-reservations/admin/pending-count', { redirectOnUnauthorized: false });
+                const count = Number(result?.data?.count ?? result?.count ?? 0);
+                productReservationNavBadge.textContent = String(count > 99 ? '99+' : count);
+                productReservationNavBadge.classList.toggle('show', count > 0);
+            } catch {
+                productReservationNavBadge.classList.remove('show');
+            }
+        }
+
+        function getProductReservationBadgeClass(status) {
+            const normalizedStatus = String(status || 'pending').toLowerCase();
+            if (normalizedStatus === 'approved') {
+                return 'badge-success';
+            }
+            if (normalizedStatus === 'rejected') {
+                return 'badge-danger';
+            }
+
+            return 'badge-warning';
+        }
+
+        async function reviewProductReservationRequest(id, status) {
+            if (currentUser.userType !== 'admin') {
+                alert('Only admin can review reservations.');
+                return;
+            }
+
+            const actionLabel = status === 'rejected' ? 'cancel' : status;
+            const notePrompt = `Optional note for ${actionLabel}:`;
+            const note = prompt(notePrompt, '');
+            if (note === null) {
+                return;
+            }
+
+            try {
+                await apiCall(`/product-reservations/admin/${id}/review`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status, adminNote: note || '' })
+                });
+                await refreshPendingProductReservationCount();
+                await loadProductReservations(currentProductReservationFilter);
+            } catch (error) {
+                alert(error?.message || 'Failed to update reservation status.');
+            }
+        }
+
+        async function loadProductReservations(status = currentProductReservationFilter || 'all') {
+            if (currentUser.userType !== 'admin') {
+                document.getElementById('pageContent').innerHTML = `
+                    <div class="panel" style="padding: 24px; text-align: center;">
+                        <h3 style="margin-bottom: 8px;">Access Restricted</h3>
+                        <p style="color: var(--text-light);">Only admin users can manage product reservation approvals.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let requests = [];
+            let loadError = '';
+            currentProductReservationFilter = status || 'all';
+
+            try {
+                const statusQuery = currentProductReservationFilter === 'all'
+                    ? ''
+                    : `?status=${encodeURIComponent(currentProductReservationFilter)}`;
+                const result = await apiCall(`/product-reservations/admin${statusQuery}`, { redirectOnUnauthorized: false });
+                requests = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+            } catch (error) {
+                loadError = error?.message || 'Failed to load product reservation requests.';
+            }
+
+            const rows = requests.length > 0
+                ? requests.map((request) => {
+                    const requestStatus = String(request.status || 'pending').toLowerCase();
+                    const actionButtons = requestStatus === 'pending'
+                        ? `
+                            <button class="btn-primary approve-reservation-btn" data-id="${request.id}" style="padding: 6px 10px; width: auto; margin-right: 6px;">Approve</button>
+                            <button class="btn-secondary reject-reservation-btn" data-id="${request.id}" style="padding: 6px 10px; width: auto; background: #ef4444; border-color: #dc2626; color: #fff !important;">Cancel</button>
+                        `
+                        : '<span style="color: var(--text-light);">Reviewed</span>';
+
+                    return `
+                        <tr>
+                            <td>${request.clientName || '-'}</td>
+                            <td>${request.productName || '-'}</td>
+                            <td>${Number(request.quantity || 0)}</td>
+                            <td>${request.note || '-'}</td>
+                            <td><span class="badge ${getProductReservationBadgeClass(requestStatus)}">${requestStatus.toUpperCase()}</span></td>
+                            <td>${actionButtons}</td>
+                        </tr>
+                    `;
+                }).join('')
+                : `<tr><td colspan="6" style="text-align:center; color: var(--text-light);">${loadError || 'No client product reservations yet.'}</td></tr>`;
+
+            const mobileCards = requests.length > 0
+                ? requests.map((request) => {
+                    const requestStatus = String(request.status || 'pending').toLowerCase();
+                    const mobileActions = requestStatus === 'pending'
+                        ? `
+                            <div class="mobile-card-actions">
+                                <button class="mobile-card-btn primary approve-reservation-btn" data-id="${request.id}">Approve</button>
+                                <button class="mobile-card-btn danger reject-reservation-btn" data-id="${request.id}">Cancel</button>
+                            </div>
+                        `
+                        : '<div class="mobile-card-value" style="margin-top: 8px; color: var(--text-light);">Reviewed</div>';
+
+                    return `
+                        <div class="mobile-card">
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Client</div>
+                                    <div class="mobile-card-value primary">${request.clientName || '-'}</div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Product</div>
+                                    <div class="mobile-card-value">${request.productName || '-'}</div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Qty</div>
+                                    <div class="mobile-card-value">${Number(request.quantity || 0)}</div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Status</div>
+                                    <div class="mobile-card-value"><span class="badge ${getProductReservationBadgeClass(requestStatus)}">${requestStatus.toUpperCase()}</span></div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-row">
+                                <div style="flex: 1;">
+                                    <div class="mobile-card-label">Note</div>
+                                    <div class="mobile-card-value">${request.note || '-'}</div>
+                                </div>
+                            </div>
+                            ${mobileActions}
+                        </div>
+                    `;
+                }).join('')
+                : `<div class="mobile-card"><div class="mobile-card-value" style="text-align:center; color: var(--text-light);">${loadError || 'No client product reservations yet.'}</div></div>`;
+
+            const smoothSwap = (element, html) => {
+                if (!element) return;
+                element.style.transition = 'opacity 0.16s ease';
+                element.style.opacity = '0.55';
+                requestAnimationFrame(() => {
+                    element.innerHTML = html;
+                    requestAnimationFrame(() => {
+                        element.style.opacity = '1';
+                    });
+                });
+            };
+
+            const bindReservationActions = () => {
+                document.querySelectorAll('.reservation-filter-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const nextFilter = btn.getAttribute('data-filter') || 'all';
+                        await loadProductReservations(nextFilter);
+                    });
+                });
+
+                document.querySelectorAll('.approve-reservation-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.getAttribute('data-id');
+                        if (!id) return;
+                        await reviewProductReservationRequest(id, 'approved');
+                    });
+                });
+
+                document.querySelectorAll('.reject-reservation-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.getAttribute('data-id');
+                        if (!id) return;
+                        await reviewProductReservationRequest(id, 'rejected');
+                    });
+                });
+            };
+
+            const existingTableBody = document.getElementById('reservationRequestsTableBody');
+            const existingMobileCards = document.getElementById('reservationRequestsMobileCards');
+            const existingFilterBar = document.getElementById('reservationFilterBar');
+            if (existingTableBody && existingMobileCards && existingFilterBar) {
+                smoothSwap(existingTableBody, rows);
+                smoothSwap(existingMobileCards, mobileCards);
+                smoothSwap(existingFilterBar, filterButtons);
+                bindReservationActions();
+                return;
+            }
+
+            const filterButtons = [
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Cancelled' }
+            ].map((filterOption) => {
+                const isActive = filterOption.value === currentProductReservationFilter;
+                return `
+                    <button
+                        class="reservation-filter-btn ${isActive ? 'btn-primary' : 'btn-secondary'}"
+                        data-filter="${filterOption.value}"
+                        style="width:auto; padding: 8px 12px; ${isActive ? '' : 'background: #fff; color: var(--text-dark) !important; border-color: var(--border);'}"
+                    >${filterOption.label}</button>
+                `;
+            }).join('');
+
+            const html = `
+                <div class="panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
+                        <div>
+                            <h3 style="margin:0; color: var(--text-dark);">Product Reservation Approvals</h3>
+                            <p style="margin:6px 0 0; color: var(--text-light); font-size: 13px;">Review reserved products from clients and approve or cancel pending requests.</p>
+                        </div>
+                        <button class="btn-secondary" id="refreshReservationRequestsBtn" style="width:auto;">Refresh</button>
+                    </div>
+                    <div id="reservationFilterBar" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">${filterButtons}</div>
+                    <div class="table-wrap reservation-approvals-wrap" style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Note</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reservationRequestsTableBody">${rows}</tbody>
+                        </table>
+                        <div class="mobile-cards-container" id="reservationRequestsMobileCards">${mobileCards}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('pageContent').innerHTML = html;
+
+            const refreshBtn = document.getElementById('refreshReservationRequestsBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async () => {
+                    await refreshPendingProductReservationCount();
+                    await loadProductReservations(currentProductReservationFilter);
+                });
+            }
+
+            bindReservationActions();
         }
 
         function displayNotificationItems(itemsToDisplay) {
@@ -6163,7 +6492,7 @@ button#menuToggle,
 
             const pageContent = document.getElementById('pageContent');
             pageContent.classList.add('loading');
-            const pageNames = { staff: 'Cashier', pos: 'POS Counter', statistics: 'Statistics', expenses: 'Other Expenses' };
+            const pageNames = { staff: 'Cashier', pos: 'POS Counter', statistics: 'Statistics', expenses: 'Other Expenses', 'product-reservations': 'Product Reservations' };
             document.getElementById('pageTitle').innerText = pageNames[page] || page.charAt(0).toUpperCase() + page.slice(1);
             await new Promise(resolve => setTimeout(resolve, 150));
             
@@ -6179,6 +6508,9 @@ button#menuToggle,
                     break;
                 case 'sales':
                     await loadSales();
+                    break;
+                case 'product-reservations':
+                    await loadProductReservations();
                     break;
                 case 'staff':
                     await loadStaff();
@@ -9894,6 +10226,13 @@ button#menuToggle,
                 
                 await refreshLowStockNotifications();
                 console.log('✓ Notifications refreshed');
+
+                await refreshPendingProductReservationCount();
+                console.log('✓ Product reservation badge refreshed');
+
+                setInterval(() => {
+                    refreshPendingProductReservationCount().catch(() => {});
+                }, 30000);
                 
                 console.log('✅ Dashboard initialization complete!');
             } catch (error) {

@@ -526,7 +526,12 @@
                     
                     // Redirect to dashboard or home page after 1.5 seconds
                     setTimeout(() => {
-                        window.location.href = 'dashboard.html';
+                        const userType = (user?.userType || '').toLowerCase();
+                        if (userType === 'client') {
+                            window.location.href = 'client-home.html';
+                        } else {
+                            window.location.href = 'dashboard.html';
+                        }
                     }, 1500);
                 } else {
                     console.error(`❌ Login failed with status ${response.status}:`, data);

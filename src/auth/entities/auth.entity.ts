@@ -13,7 +13,8 @@ import * as bcrypt from 'bcrypt';
 
 export enum UserType {
   ADMIN = 'admin',
-  STAFF = 'staff'
+  STAFF = 'staff',
+  CLIENT = 'client'
 } 
 
 @Entity('users')
@@ -30,8 +31,8 @@ export class User {
   @Column({ length: 255 })
   password: string;
 
-  @Column({ length: 255 })
-  businessName: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  businessName: string | null;
 
   @Column({ length: 255 })
   name: string;

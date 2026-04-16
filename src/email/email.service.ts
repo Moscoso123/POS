@@ -146,7 +146,8 @@ export class EmailService {
       this.logger.log(`Welcome email sent to ${toEmail}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send welcome email to ${toEmail}:`, error.message);
+      const errorMsg = (error instanceof Error) ? error.message : JSON.stringify(error);
+      this.logger.error(`Failed to send welcome email to ${toEmail}:`, errorMsg);
       return false;
     }
   }

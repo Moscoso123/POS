@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from './entities/auth.entity';
+import { User, UserType } from './entities/auth.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -73,7 +73,13 @@ export class AuthService {
       user.name = registerDto.name;
       user.email = registerDto.email;
       user.phoneNumber = formattedPhoneNumber;
-      user.businessName = registerDto.businessName;
+      const resolvedBusinessName = registerDto.businessName?.trim() || null;
+
+      if (registerDto.userType !== UserType.CLIENT && !resolvedBusinessName) {
+        throw new BadRequestException('Business name is required for admin and staff users');
+      }
+
+      user.businessName = resolvedBusinessName;
       user.userType = registerDto.userType;
       // Let the entity lifecycle hook hash the password to avoid double-hashing
       user.password = registerDto.password;
@@ -105,6 +111,23 @@ export class AuthService {
       }
       throw new BadRequestException(error.message || 'Registration failed');
     }
+  }
+
+  async getAvailableBusinessNames() {
+    const rows = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.businessName', 'businessName')
+      .where('user.businessName IS NOT NULL')
+      .andWhere("TRIM(user.businessName) != ''")
+      .andWhere('user.userType IN (:...types)', { types: [UserType.ADMIN, UserType.STAFF] })
+      .groupBy('user.businessName')
+      .orderBy('user.businessName', 'ASC')
+      .getRawMany();
+
+    return {
+      success: true,
+      data: rows.map((row) => row.businessName),
+    };
   }
 
   async login(loginDto: LoginDto) {

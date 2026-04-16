@@ -287,9 +287,22 @@ async function bootstrap() {
     next();
   }, express.static(join(__dirname, '..', 'uploads')));
 
-  // Listen on all interfaces
-  const port = process.env.PORT || 3000;
-  await app.listen(port, '0.0.0.0');
+  // Listen on all interfaces with a fallback if the default port is already in use.
+  const preferredPort = Number(process.env.PORT) || 3000;
+  let port = preferredPort;
+
+  try {
+    await app.listen(port, '0.0.0.0');
+  } catch (error) {
+    const listenError = error as NodeJS.ErrnoException;
+    if (listenError.code === 'EADDRINUSE') {
+      port = preferredPort + 1;
+      logger.warn(`Port ${preferredPort} is in use. Falling back to port ${port}.`);
+      await app.listen(port, '0.0.0.0');
+    } else {
+      throw error;
+    }
+  }
 
   // Tight timeouts reduce socket exhaustion and slowloris-style behavior.
   const httpServer = app.getHttpServer() as Server;

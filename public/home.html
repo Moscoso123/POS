@@ -326,6 +326,12 @@
             padding: 24px;
         }
 
+        .cart-items-list {
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
         .cart-item {
             display: flex;
             justify-content: space-between;
@@ -378,10 +384,26 @@
             }
             .pos-layout {
                 flex-direction: column;
+                gap: 0;
             }
             .products-grid {
+                flex: none;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
+                gap: 10px;
+                padding: 12px 12px 8px;
+                align-content: start;
+                max-height: 220px;
+                overflow-y: auto;
+                margin-bottom: 0;
+            }
+            .cart-section {
+                padding: 8px 14px 10px;
+                margin-top: 0;
+            }
+            .cart-items-list {
+                min-height: 120px;
+                max-height: 220px;
             }
         }
 
@@ -512,6 +534,131 @@
             background: var(--bg-light);
             border-color: var(--text-light);
         }
+
+        .reservation-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .reservation-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-upcoming {
+            color: #1d4ed8;
+            background: #dbeafe;
+        }
+
+        .status-soon {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .status-completed {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status-pending {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .status-approved {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status-rejected {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            font-weight: 700;
+        }
+
+        .admin-reservation-mobile-cards {
+            display: none;
+            padding: 14px;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .admin-reservation-mobile-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 6px 16px rgba(30, 58, 138, 0.06);
+        }
+
+        .admin-reservation-mobile-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .admin-reservation-mobile-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .admin-reservation-mobile-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .admin-reservation-mobile-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            word-break: break-word;
+        }
+
+        .admin-reservation-mobile-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .admin-reservation-table-wrap table {
+                display: none;
+            }
+
+            .admin-reservation-mobile-cards {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -543,6 +690,15 @@
                     <div class="nav-item" data-page="history">
                         <span class="material-symbols-outlined">receipt</span>
                         <span>Sales History</span>
+                    </div>
+                    <div class="nav-item" data-page="reservations">
+                        <span class="material-symbols-outlined">event_seat</span>
+                        <span>Reservations</span>
+                    </div>
+                    <div class="nav-item" data-page="product-reservation-approvals">
+                        <span class="material-symbols-outlined">fact_check</span>
+                        <span>Product Reservation Requests</span>
+                        <span class="nav-badge" id="pendingProductReservationBadge" style="display:none;">0</span>
                     </div>
                     <div class="nav-item" data-page="staff">
                         <span class="material-symbols-outlined">badge</span>
@@ -585,6 +741,12 @@
         // --- GLOBAL STATE ---
         let currentPage = "dashboard";
         let salesChart = null; // Chart.js instance
+        const RESERVATION_STORAGE_KEY = 'bluepos_reservations_v1';
+        let reservations = [];
+        const API_BASE_URL = window.location.origin + '/api';
+        const accessToken = localStorage.getItem('access_token');
+        let productReservationRequests = [];
+        let currentProductReservationFilter = 'all';
         
         // Cart state for POS Counter
         let cart = []; // { id, name, price, quantity }
@@ -598,6 +760,147 @@
             { id: 5, name: "Muffin", price: 3.25, icon: "cake" },
             { id: 6, name: "Sandwich", price: 6.90, icon: "lunch_dining" }
         ];
+
+        function loadReservationsFromStorage() {
+            try {
+                const raw = localStorage.getItem(RESERVATION_STORAGE_KEY);
+                reservations = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(reservations)) {
+                    reservations = [];
+                }
+            } catch {
+                reservations = [];
+            }
+        }
+
+        function saveReservationsToStorage() {
+            localStorage.setItem(RESERVATION_STORAGE_KEY, JSON.stringify(reservations));
+        }
+
+        async function fetchPendingProductReservationCount() {
+            const badge = document.getElementById('pendingProductReservationBadge');
+            if (!badge || !accessToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/product-reservations/admin/pending-count`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                const payload = await response.json();
+                const count = Number(payload?.data?.count || 0);
+
+                if (count > 0) {
+                    badge.textContent = String(count > 99 ? '99+' : count);
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function fetchProductReservationRequests(status = currentProductReservationFilter || 'all') {
+            if (!accessToken) {
+                productReservationRequests = [];
+                return;
+            }
+
+            currentProductReservationFilter = status || 'all';
+
+            try {
+                const statusQuery = currentProductReservationFilter === 'all'
+                    ? ''
+                    : `?status=${encodeURIComponent(currentProductReservationFilter)}`;
+                const response = await fetch(`${API_BASE_URL}/product-reservations/admin${statusQuery}`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load product reservation requests');
+                }
+
+                const payload = await response.json();
+                productReservationRequests = Array.isArray(payload?.data) ? payload.data : [];
+            } catch {
+                productReservationRequests = [];
+            }
+        }
+
+        async function reviewProductReservationRequest(reservationId, status) {
+            if (!accessToken) {
+                alert('Please login again to continue.');
+                return;
+            }
+
+            const actionLabel = status === 'rejected' ? 'cancel' : status;
+            const note = prompt(`Optional admin note for ${actionLabel}:`, '') || '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/product-reservations/admin/${reservationId}/review`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ status, adminNote: note })
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload?.message || `Failed to ${status} reservation`);
+                }
+
+                await fetchProductReservationRequests(currentProductReservationFilter);
+                await fetchPendingProductReservationCount();
+                renderProductReservationApprovals();
+            } catch (error) {
+                alert(error?.message || `Failed to ${status} reservation request`);
+            }
+        }
+
+        function getReservationStatus(date, time) {
+            const reservationDateTime = new Date(`${date}T${time}`);
+            if (Number.isNaN(reservationDateTime.getTime())) {
+                return 'Upcoming';
+            }
+
+            const now = new Date();
+            if (reservationDateTime < now) {
+                return 'Completed';
+            }
+
+            const msUntil = reservationDateTime.getTime() - now.getTime();
+            if (msUntil <= 60 * 60 * 1000) {
+                return 'Soon';
+            }
+
+            return 'Upcoming';
+        }
+
+        function formatReservationDate(date, time) {
+            const reservationDateTime = new Date(`${date}T${time}`);
+            if (Number.isNaN(reservationDateTime.getTime())) {
+                return `${date} ${time}`;
+            }
+
+            return reservationDateTime.toLocaleString([], {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
         
         // Helper: update cart UI inside POS Counter
         function updateCartUI() {
@@ -782,11 +1085,11 @@
                             ${productsHtml}
                         </div>
                         <div class="cart-section">
-                            <h3 style="margin-bottom: 16px;">🛒 Current Sale</h3>
-                            <div id="cartItemsList" style="min-height: 200px; max-height: 300px; overflow-y: auto;">Cart empty</div>
+                            <h3 style="margin: 0 0 10px;">🛒 Current Sale</h3>
+                            <div id="cartItemsList" class="cart-items-list">Cart empty</div>
                             <div class="total-row">Total: $<span id="cartTotal">0.00</span></div>
                             <button id="checkoutBtn" class="btn-primary" style="margin-bottom: 12px;">💳 Checkout</button>
-                            <button id="clearCartBtn" style="background: none; border: 1px solid var(--border); padding: 10px; width:100%; border-radius: 40px; cursor:pointer;">Clear Cart</button>
+                            <button id="clearCartBtn" style="background: #ef4444; border: 1px solid #dc2626; color:#fff; padding: 10px; width:100%; border-radius: 40px; cursor:pointer;">Clear Cart</button>
                         </div>
                     </div>
                 </div>
@@ -821,6 +1124,329 @@
                     </table>
                 </div>
             `;
+        }
+
+        function renderReservations() {
+            const sortedReservations = [...reservations].sort((a, b) => {
+                const aDate = new Date(`${a.date}T${a.time}`).getTime();
+                const bDate = new Date(`${b.date}T${b.time}`).getTime();
+                return aDate - bDate;
+            });
+
+            const rows = sortedReservations.length
+                ? sortedReservations.map((reservation) => {
+                    const status = getReservationStatus(reservation.date, reservation.time);
+                    const statusClass = status === 'Soon'
+                        ? 'status-soon'
+                        : status === 'Completed'
+                            ? 'status-completed'
+                            : 'status-upcoming';
+
+                    return `
+                        <tr>
+                            <td>${reservation.customerName}</td>
+                            <td>${formatReservationDate(reservation.date, reservation.time)}</td>
+                            <td>${reservation.guests}</td>
+                            <td>${reservation.tableNumber || '-'}</td>
+                            <td>${reservation.contactNumber || '-'}</td>
+                            <td><span class="status-pill ${statusClass}">${status}</span></td>
+                            <td>
+                                <button class="btn-secondary delete-reservation-btn" data-id="${reservation.id}" style="padding: 6px 10px;">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')
+                : '<tr><td colspan="7" style="text-align:center; color:#64748b;">No reservations yet.</td></tr>';
+
+            document.getElementById('pageContent').innerHTML = `
+                <div class="recent-sales" style="margin-bottom: 20px;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+                        <h3>Reserve a Table</h3>
+                        <p style="color: var(--text-light); margin-top: 6px;">Create and manage customer reservations directly from the landing page.</p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <form id="reservationForm">
+                            <div class="reservation-form-grid">
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Customer Name</label>
+                                    <input type="text" id="reservationName" placeholder="e.g., Maria Santos" required />
+                                </div>
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Date</label>
+                                    <input type="date" id="reservationDate" required />
+                                </div>
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Time</label>
+                                    <input type="time" id="reservationTime" required />
+                                </div>
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Guests</label>
+                                    <input type="number" id="reservationGuests" min="1" max="30" value="2" required />
+                                </div>
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Table # (optional)</label>
+                                    <input type="text" id="reservationTable" placeholder="e.g., A3" />
+                                </div>
+                                <div class="modal-field" style="margin:0;">
+                                    <label>Contact Number</label>
+                                    <input type="tel" id="reservationContact" placeholder="e.g., 09123456789" />
+                                </div>
+                            </div>
+                            <div class="reservation-actions">
+                                <button type="submit" class="btn-primary" style="width:auto; padding: 10px 24px;">Save Reservation</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="recent-sales">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+                        <h3>Upcoming Reservations</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Date & Time</th>
+                                <th>Guests</th>
+                                <th>Table</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            const reservationDateInput = document.getElementById('reservationDate');
+            if (reservationDateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                reservationDateInput.min = today;
+                reservationDateInput.value = today;
+            }
+
+            const reservationForm = document.getElementById('reservationForm');
+            reservationForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const customerName = document.getElementById('reservationName').value.trim();
+                const date = document.getElementById('reservationDate').value;
+                const time = document.getElementById('reservationTime').value;
+                const guests = Number(document.getElementById('reservationGuests').value);
+                const tableNumber = document.getElementById('reservationTable').value.trim();
+                const contactNumber = document.getElementById('reservationContact').value.trim();
+
+                if (!customerName || !date || !time || !guests || guests < 1) {
+                    alert('Please fill in all required reservation fields.');
+                    return;
+                }
+
+                const reservationDateTime = new Date(`${date}T${time}`);
+                if (reservationDateTime < new Date()) {
+                    alert('Reservation date/time must be in the future.');
+                    return;
+                }
+
+                reservations.push({
+                    id: Date.now(),
+                    customerName,
+                    date,
+                    time,
+                    guests,
+                    tableNumber,
+                    contactNumber,
+                    createdAt: new Date().toISOString()
+                });
+
+                saveReservationsToStorage();
+                renderReservations();
+                alert('Reservation saved successfully.');
+            });
+
+            document.querySelectorAll('.delete-reservation-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = Number(btn.getAttribute('data-id'));
+                    reservations = reservations.filter((item) => item.id !== id);
+                    saveReservationsToStorage();
+                    renderReservations();
+                });
+            });
+        }
+
+        function renderProductReservationApprovals() {
+            const smoothSwap = (element, html) => {
+                if (!element) return;
+                element.style.transition = 'opacity 0.16s ease';
+                element.style.opacity = '0.55';
+                requestAnimationFrame(() => {
+                    element.innerHTML = html;
+                    requestAnimationFrame(() => {
+                        element.style.opacity = '1';
+                    });
+                });
+            };
+
+            const bindProductReservationApprovalEvents = () => {
+                document.querySelectorAll('.approve-product-reservation').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-id');
+                        reviewProductReservationRequest(id, 'approved');
+                    });
+                });
+
+                document.querySelectorAll('.reject-product-reservation').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-id');
+                        reviewProductReservationRequest(id, 'rejected');
+                    });
+                });
+
+                document.querySelectorAll('.product-reservation-filter-btn').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const nextFilter = btn.getAttribute('data-filter') || 'all';
+                        await fetchProductReservationRequests(nextFilter);
+                        renderProductReservationApprovals();
+                    });
+                });
+            };
+
+            const rows = productReservationRequests.length
+                ? productReservationRequests.map((request) => {
+                    const status = String(request.status || 'pending').toLowerCase();
+                    const statusClass = status === 'approved'
+                        ? 'status-approved'
+                        : status === 'rejected'
+                            ? 'status-rejected'
+                            : 'status-pending';
+                    const actionButtons = status === 'pending'
+                        ? `
+                            <button class="btn-primary approve-product-reservation" data-id="${request.id}" style="width:auto; padding:6px 12px; margin-right:6px;">Approve</button>
+                            <button class="btn-secondary reject-product-reservation" data-id="${request.id}" style="padding:6px 12px;">Cancel</button>
+                        `
+                        : '<span style="color:#64748b;">Reviewed</span>';
+
+                    return `
+                        <tr>
+                            <td>${request.clientName || '-'}</td>
+                            <td>${request.productName || '-'}</td>
+                            <td>${request.quantity || 0}</td>
+                            <td>${request.note || '-'}</td>
+                            <td><span class="status-pill ${statusClass}">${status}</span></td>
+                            <td>${actionButtons}</td>
+                        </tr>
+                    `;
+                }).join('')
+                : '<tr><td colspan="6" style="text-align:center; color:#64748b;">No client product reservation requests yet.</td></tr>';
+
+            const mobileCards = productReservationRequests.length
+                ? productReservationRequests.map((request) => {
+                    const status = String(request.status || 'pending').toLowerCase();
+                    const statusClass = status === 'approved'
+                        ? 'status-approved'
+                        : status === 'rejected'
+                            ? 'status-rejected'
+                            : 'status-pending';
+                    const actions = status === 'pending'
+                        ? `
+                            <div class="admin-reservation-mobile-actions">
+                                <button class="btn-primary approve-product-reservation" data-id="${request.id}" style="width:auto; padding:8px 12px;">Approve</button>
+                                <button class="btn-secondary reject-product-reservation" data-id="${request.id}" style="width:auto; padding:8px 12px;">Cancel</button>
+                            </div>
+                        `
+                        : '<div class="admin-reservation-mobile-value" style="color:#64748b; margin-top: 6px;">Reviewed</div>';
+
+                    return `
+                        <div class="admin-reservation-mobile-card">
+                            <div class="admin-reservation-mobile-row">
+                                <div style="flex:1;">
+                                    <div class="admin-reservation-mobile-label">Client</div>
+                                    <div class="admin-reservation-mobile-value">${request.clientName || '-'}</div>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="admin-reservation-mobile-label">Product</div>
+                                    <div class="admin-reservation-mobile-value">${request.productName || '-'}</div>
+                                </div>
+                            </div>
+                            <div class="admin-reservation-mobile-row">
+                                <div style="flex:1;">
+                                    <div class="admin-reservation-mobile-label">Qty</div>
+                                    <div class="admin-reservation-mobile-value">${request.quantity || 0}</div>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="admin-reservation-mobile-label">Status</div>
+                                    <div class="admin-reservation-mobile-value"><span class="status-pill ${statusClass}">${status}</span></div>
+                                </div>
+                            </div>
+                            <div class="admin-reservation-mobile-row">
+                                <div style="flex:1;">
+                                    <div class="admin-reservation-mobile-label">Note</div>
+                                    <div class="admin-reservation-mobile-value">${request.note || '-'}</div>
+                                </div>
+                            </div>
+                            ${actions}
+                        </div>
+                    `;
+                }).join('')
+                : '<div class="admin-reservation-mobile-card"><div class="admin-reservation-mobile-value" style="text-align:center; color:#64748b;">No client product reservation requests yet.</div></div>';
+
+            const filterButtons = [
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Cancelled' }
+            ].map((filterOption) => {
+                const isActive = filterOption.value === currentProductReservationFilter;
+                return `
+                    <button
+                        class="product-reservation-filter-btn ${isActive ? 'btn-primary' : 'btn-secondary'}"
+                        data-filter="${filterOption.value}"
+                        style="width:auto; padding:8px 12px; ${isActive ? '' : 'background:#fff; color:#1e293b !important; border:1px solid var(--border);'}"
+                    >${filterOption.label}</button>
+                `;
+            }).join('');
+
+            const existingTableBody = document.getElementById('adminReservationTableBody');
+            const existingMobileCards = document.getElementById('adminReservationMobileCards');
+            const existingFilterBar = document.getElementById('adminReservationFilterBar');
+            if (existingTableBody && existingMobileCards && existingFilterBar) {
+                smoothSwap(existingTableBody, rows);
+                smoothSwap(existingMobileCards, mobileCards);
+                smoothSwap(existingFilterBar, filterButtons);
+                bindProductReservationApprovalEvents();
+                return;
+            }
+
+            document.getElementById('pageContent').innerHTML = `
+                <div class="recent-sales">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+                        <h3>Client Product Reservation Requests</h3>
+                        <p style="color: var(--text-light); margin-top: 6px;">Display reserved products from client users and approve or cancel pending requests.</p>
+                    </div>
+                    <div id="adminReservationFilterBar" style="padding: 16px 20px 0; display:flex; flex-wrap:wrap; gap:8px;">${filterButtons}</div>
+                    <div class="admin-reservation-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Note</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReservationTableBody">${rows}</tbody>
+                        </table>
+                        <div class="admin-reservation-mobile-cards" id="adminReservationMobileCards">${mobileCards}</div>
+                    </div>
+                </div>
+            `;
+
+            bindProductReservationApprovalEvents();
         }
         
         function renderStaff() {
@@ -893,6 +1519,8 @@
                 page === 'inventory' ? 'Inventory Management' :
                 page === 'counter' ? 'POS Counter' :
                 page === 'history' ? 'Sales History' :
+                page === 'reservations' ? 'Reservations' :
+                page === 'product-reservation-approvals' ? 'Product Reservation Requests' :
                 page === 'staff' ? 'Staff Management' :
                 page === 'reports' ? 'Reports & Analytics' : 'POS Settings';
             
@@ -903,6 +1531,10 @@
                 case 'inventory': renderInventory(); break;
                 case 'counter': renderCounter(); break;
                 case 'history': renderHistory(); break;
+                case 'reservations': renderReservations(); break;
+                case 'product-reservation-approvals':
+                    fetchProductReservationRequests('all').then(() => renderProductReservationApprovals());
+                    break;
                 case 'staff': renderStaff(); break;
                 case 'reports': renderReports(); break;
                 case 'settings': renderSettings(); break;
@@ -940,8 +1572,11 @@
         });
         
         // initial load
+        loadReservationsFromStorage();
+        fetchPendingProductReservationCount();
+        setInterval(fetchPendingProductReservationCount, 30000);
         bindNavEvents();
-        navigateTo('dashboard');
+        navigateTo('reservations');
     </script>
 
     <!-- MODALS -->

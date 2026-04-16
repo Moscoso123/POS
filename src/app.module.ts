@@ -10,6 +10,7 @@ import { ChatModule } from './chat/chat.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { ProductReservationsModule } from './product-reservations/product-reservations.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -39,6 +40,7 @@ import { AppService } from './app.service';
     AnalyticsModule,
     ExpensesModule,
     StatisticsModule,
+    ProductReservationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

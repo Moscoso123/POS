@@ -1,8 +1,9 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsPhoneNumber, IsOptional, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsEnum, IsPhoneNumber, IsOptional, Matches, MaxLength, ValidateIf } from 'class-validator';
 
 export enum UserType {
   ADMIN = 'admin',
-  STAFF = 'staff'
+  STAFF = 'staff',
+  CLIENT = 'client'
 }
 
 export class RegisterDto {
@@ -20,9 +21,11 @@ export class RegisterDto {
   })
   password: string;
 
+  @IsOptional()
+  @ValidateIf((o) => o.userType !== UserType.CLIENT)
   @IsString()
   @MaxLength(255)
-  businessName: string;
+  businessName?: string;
 
   @IsString()
   @MaxLength(255)

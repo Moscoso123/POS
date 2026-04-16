@@ -473,6 +473,10 @@ input.success, select.success {
     display: block;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .hint {
     font-size: 12px;
     color: var(--text-light);
@@ -884,12 +888,23 @@ input.success, select.success {
 
                 <!-- Step 3: Business Information -->
                 <div class="form-step" id="step3Form">
-                    <div class="input-group">
+                    <div class="input-group" id="businessNameGroup">
                         <label class="input-label">Business Name *</label>
                         <div class="input-wrapper">
                             <input type="text" id="businessName" class="input-field" placeholder="Enter your business name">
                         </div>
                         <div class="error-message" id="businessError">Please enter your business name</div>
+                    </div>
+
+                    <div class="input-group hidden" id="existingBusinessGroup">
+                        <label class="input-label">Select Existing Business *</label>
+                        <div class="input-wrapper">
+                            <select id="existingBusinessSelect" class="select-field">
+                                <option value="">Select a business</option>
+                                <option value="__custom__">Other (type manually)</option>
+                            </select>
+                        </div>
+                        <div class="hint">Choose an existing business, or select Other to type a new one.</div>
                     </div>
                     
                     <div class="input-group">
@@ -898,6 +913,7 @@ input.success, select.success {
                             <select id="userType" class="select-field">
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
+                                <option value="client">Client</option>
                             </select>
                         </div>
                     </div>
@@ -966,9 +982,13 @@ input.success, select.success {
         const emailInput = document.getElementById('email');
         const phoneInput = document.getElementById('phoneNumber');
         const businessNameInput = document.getElementById('businessName');
+        const businessNameGroup = document.getElementById('businessNameGroup');
+        const existingBusinessGroup = document.getElementById('existingBusinessGroup');
+        const existingBusinessSelect = document.getElementById('existingBusinessSelect');
         const userTypeSelect = document.getElementById('userType');
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirmPassword');
+        const form = document.getElementById('registerForm');
 
         // Error elements
         const nameError = document.getElementById('nameError');
@@ -977,6 +997,163 @@ input.success, select.success {
         const businessError = document.getElementById('businessError');
         const passwordError = document.getElementById('passwordError');
         const confirmError = document.getElementById('confirmError');
+        const REGISTER_DRAFT_KEY = 'bluepos_register_draft_v1';
+        const BUSINESS_CACHE_KEY = 'bluepos_businesses_v1';
+
+        function setBusinessError(message) {
+            businessError.textContent = message || 'Please enter your business name';
+            businessError.classList.add('show');
+            businessNameInput.classList.add('error');
+        }
+
+        function clearBusinessError() {
+            businessError.classList.remove('show');
+            businessNameInput.classList.remove('error');
+            businessError.textContent = 'Please enter your business name';
+        }
+
+        function getResolvedBusinessName() {
+            const userType = userTypeSelect.value;
+            if (userType === 'client') {
+                return '';
+            }
+
+            if (userType === 'staff') {
+                if (existingBusinessSelect.value === '__custom__') {
+                    return businessNameInput.value.trim();
+                }
+                return existingBusinessSelect.value.trim();
+            }
+
+            return businessNameInput.value.trim();
+        }
+
+        function updateBusinessFieldVisibility() {
+            const userType = userTypeSelect.value;
+            clearBusinessError();
+
+            if (userType === 'client') {
+                existingBusinessGroup.classList.add('hidden');
+                businessNameGroup.classList.add('hidden');
+                businessNameInput.value = '';
+                return;
+            }
+
+            if (userType === 'staff') {
+                existingBusinessGroup.classList.remove('hidden');
+                const shouldShowManualInput = existingBusinessSelect.value === '__custom__';
+                if (shouldShowManualInput) {
+                    businessNameGroup.classList.remove('hidden');
+                } else {
+                    businessNameGroup.classList.add('hidden');
+                    businessNameInput.value = '';
+                }
+                return;
+            }
+
+            existingBusinessGroup.classList.add('hidden');
+            businessNameGroup.classList.remove('hidden');
+        }
+
+        function setExistingBusinessOptions(businesses) {
+            const currentValue = existingBusinessSelect.value;
+            existingBusinessSelect.innerHTML = '';
+
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = 'Select a business';
+            existingBusinessSelect.appendChild(placeholderOption);
+
+            businesses.forEach((name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                existingBusinessSelect.appendChild(option);
+            });
+
+            const customOption = document.createElement('option');
+            customOption.value = '__custom__';
+            customOption.textContent = 'Other (type manually)';
+            existingBusinessSelect.appendChild(customOption);
+
+            const hasCurrent = Array.from(existingBusinessSelect.options).some((opt) => opt.value === currentValue);
+            if (hasCurrent) {
+                existingBusinessSelect.value = currentValue;
+            }
+            updateBusinessFieldVisibility();
+        }
+
+        async function loadExistingBusinesses() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/businesses`);
+                if (!response.ok) {
+                    throw new Error('Unable to load businesses');
+                }
+
+                const data = await response.json();
+                const businesses = Array.isArray(data?.data)
+                    ? data.data
+                    : Array.isArray(data)
+                        ? data
+                        : [];
+
+                const cleanBusinesses = businesses
+                    .map((item) => String(item || '').trim())
+                    .filter((item) => item.length > 1);
+
+                localStorage.setItem(BUSINESS_CACHE_KEY, JSON.stringify(cleanBusinesses));
+                setExistingBusinessOptions(cleanBusinesses);
+            } catch {
+                const cached = localStorage.getItem(BUSINESS_CACHE_KEY);
+                const cachedBusinesses = cached ? JSON.parse(cached) : [];
+                if (Array.isArray(cachedBusinesses)) {
+                    setExistingBusinessOptions(cachedBusinesses);
+                }
+            }
+        }
+
+        function saveDraft() {
+            const draft = {
+                name: nameInput.value,
+                email: emailInput.value,
+                phoneNumber: phoneInput.value,
+                businessName: businessNameInput.value,
+                existingBusiness: existingBusinessSelect.value,
+                userType: userTypeSelect.value,
+                password: passwordInput.value,
+                confirmPassword: confirmPasswordInput.value,
+                currentStep
+            };
+            localStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        function loadDraft() {
+            const rawDraft = localStorage.getItem(REGISTER_DRAFT_KEY);
+            if (!rawDraft) return;
+
+            try {
+                const draft = JSON.parse(rawDraft);
+                nameInput.value = draft.name || '';
+                emailInput.value = draft.email || '';
+                phoneInput.value = draft.phoneNumber || '';
+                businessNameInput.value = draft.businessName || '';
+                existingBusinessSelect.value = draft.existingBusiness || '';
+                userTypeSelect.value = draft.userType || 'staff';
+                passwordInput.value = draft.password || '';
+                confirmPasswordInput.value = draft.confirmPassword || '';
+
+                const savedStep = Number(draft.currentStep);
+                if (savedStep >= 1 && savedStep <= totalSteps) {
+                    currentStep = savedStep;
+                }
+            } catch {
+                localStorage.removeItem(REGISTER_DRAFT_KEY);
+            }
+        }
+
+        function clearDraft() {
+            localStorage.removeItem(REGISTER_DRAFT_KEY);
+        }
 
         // Profile Picture Upload Handler
         profilePicInput.addEventListener('change', function(e) {
@@ -996,6 +1173,7 @@ input.success, select.success {
                 }
 
                 selectedFile = file;
+                saveDraft();
                 
                 const reader = new FileReader();
                 reader.onload = function(event) {
@@ -1080,19 +1258,40 @@ input.success, select.success {
         }
 
         function validateStep3() {
-            let isValid = true;
-            const businessName = businessNameInput.value.trim();
-            
-            if (!businessName || businessName.length < 2) {
-                businessError.classList.add('show');
-                businessNameInput.classList.add('error');
-                isValid = false;
-            } else {
-                businessError.classList.remove('show');
-                businessNameInput.classList.remove('error');
-                businessNameInput.classList.add('success');
+            const userType = userTypeSelect.value;
+
+            if (userType === 'client') {
+                clearBusinessError();
+                return true;
             }
-            return isValid;
+
+            if (userType === 'staff') {
+                if (!existingBusinessSelect.value) {
+                    setBusinessError('Please select an existing business or choose Other');
+                    return false;
+                }
+
+                if (existingBusinessSelect.value === '__custom__') {
+                    const manualBusinessName = businessNameInput.value.trim();
+                    if (!manualBusinessName || manualBusinessName.length < 2) {
+                        setBusinessError('Please enter a valid business name');
+                        return false;
+                    }
+                }
+
+                clearBusinessError();
+                return true;
+            }
+
+            const businessName = businessNameInput.value.trim();
+            if (!businessName || businessName.length < 2) {
+                setBusinessError('Please enter your business name');
+                return false;
+            }
+
+            clearBusinessError();
+            businessNameInput.classList.add('success');
+            return true;
         }
 
         function validateStep4() {
@@ -1206,7 +1405,6 @@ input.success, select.success {
         }
 
         // Form submission
-        const form = document.getElementById('registerForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -1219,18 +1417,25 @@ input.success, select.success {
             const name = nameInput.value.trim();
             const email = emailInput.value.trim();
             let phone = phoneInput.value.trim();
-            const businessName = businessNameInput.value.trim();
+            const businessName = getResolvedBusinessName();
             const userType = userTypeSelect.value;
             const password = passwordInput.value;
 
             const phoneValidation = validatePhilippinePhone(phone);
+            if (!phoneValidation.valid) {
+                showAlert('Please enter a valid phone number', 'error');
+                setTimeout(() => hideAlert(), 3000);
+                return;
+            }
             const formattedPhone = `+63${phoneValidation.cleanNumber}`;
 
             const submitData = new FormData();
             submitData.append('name', name);
             submitData.append('email', email);
             submitData.append('phoneNumber', formattedPhone);
-            submitData.append('businessName', businessName);
+            if (businessName) {
+                submitData.append('businessName', businessName);
+            }
             submitData.append('userType', userType);
             submitData.append('password', password);
             
@@ -1251,6 +1456,7 @@ input.success, select.success {
                 const data = await response.json();
 
                 if (response.ok) {
+                    clearDraft();
                     showAlert('Registration successful! Redirecting to login...', 'success');
                     setTimeout(() => {
                         window.location.href = 'login.html';
@@ -1275,6 +1481,7 @@ input.success, select.success {
             if (value.startsWith('63')) value = value.substring(2);
             if (value.length > 10) value = value.slice(0, 10);
             this.value = value;
+            saveDraft();
         });
 
         nameInput.addEventListener('input', () => {
@@ -1283,6 +1490,7 @@ input.success, select.success {
                 nameInput.classList.remove('error');
                 nameError.classList.remove('show');
             }
+            saveDraft();
         });
 
         emailInput.addEventListener('input', () => {
@@ -1292,14 +1500,21 @@ input.success, select.success {
                 emailInput.classList.remove('error');
                 emailError.classList.remove('show');
             }
+            saveDraft();
         });
 
         businessNameInput.addEventListener('input', () => {
             if (businessNameInput.value.trim().length >= 2) {
                 businessNameInput.classList.add('success');
                 businessNameInput.classList.remove('error');
-                businessError.classList.remove('show');
+                clearBusinessError();
             }
+            saveDraft();
+        });
+
+        existingBusinessSelect.addEventListener('change', () => {
+            updateBusinessFieldVisibility();
+            saveDraft();
         });
 
         passwordInput.addEventListener('input', () => {
@@ -1313,6 +1528,7 @@ input.success, select.success {
                 confirmPasswordInput.classList.remove('error');
                 confirmError.classList.remove('show');
             }
+            saveDraft();
         });
 
         confirmPasswordInput.addEventListener('input', () => {
@@ -1325,9 +1541,18 @@ input.success, select.success {
                 confirmPasswordInput.classList.add('error');
                 confirmError.classList.add('show');
             }
+            saveDraft();
+        });
+
+        userTypeSelect.addEventListener('change', () => {
+            updateBusinessFieldVisibility();
+            saveDraft();
         });
 
         // Initialize
+        loadDraft();
+        updateBusinessFieldVisibility();
+        loadExistingBusinesses();
         updateStep();
     </script>
 </body>
